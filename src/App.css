@@ -1,0 +1,209 @@
+/* src/App.css */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Kanit', sans-serif;
+  background-color: #343541;
+  color: white;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* --- คอนเทนเนอร์หลัก --- */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* --- 1. แถบประวัติด้านซ้าย (Sidebar) --- */
+.sidebar {
+  width: 260px;
+  background-color: #202123;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-right: 1px solid #4d4d4f;
+  transition: transform 0.3s ease;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #565869;
+  border-radius: 5px;
+  background-color: transparent;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.new-chat-btn:hover {
+  background-color: #2f303d;
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.history-item {
+  padding: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #ececf1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item:hover {
+  background-color: #2a2b32;
+}
+
+/* --- 2. พื้นที่แชทด้านขวา --- */
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #343541;
+  position: relative;
+}
+
+.chat-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #2a2b32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d1d5db;
+  font-weight: 500;
+}
+
+/* --- โซนแสดงข้อความ (แก้ใหม่: ขยายให้กว้างขึ้น) --- */
+.chat-body {
+  flex: 1;
+  /* 👇 ปรับตรงนี้ครับ: ลดขอบเหลือ 10% (เนื้อหาจะกว้างขึ้น) */
+  padding: 20px 10%; 
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- กล่องข้อความ (Bubble) --- */
+.message-bubble {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 80%;
+  width: fit-content;
+  padding: 10px 15px;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* --- ฝั่งบอท (ซ้าย) --- */
+.bot-msg {
+  align-self: flex-start;
+  background-color: #444654;
+  border-radius: 15px 15px 15px 5px;
+}
+
+/* --- ฝั่งเรา (ขวา) --- */
+.user-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+  background-color: #444654; /* สีเดียวกับบอท */
+  color: white;
+  border-radius: 15px 15px 5px 15px;
+  text-align: right;
+}
+
+/* รูป Avatar */
+.avatar {
+  width: 35px;
+  height: 35px;
+  min-width: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+/* สีม่วงสำหรับ Avatar เรา */
+.user-msg .avatar {
+  background-color: #7b2cbf !important;
+  color: white;
+}
+
+/* --- ช่องพิมพ์ด้านล่าง (แก้ใหม่: ขยายให้กว้างขึ้นเท่าข้างบน) --- */
+.chat-input-area {
+  /* 👇 ปรับตรงนี้ครับ: ลดขอบเหลือ 10% ให้เท่ากับข้างบน */
+  padding: 20px 10%; 
+  background-color: #343541;
+  border-top: 1px solid #565869;
+}
+
+.input-wrapper {
+  background-color: #40414f;
+  border: 1px solid #565869;
+  border-radius: 12px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.chat-input-area input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+}
+
+.chat-input-area button {
+  background: transparent;
+  border: none;
+  color: #d9d9e3;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.2s;
+}
+
+.chat-input-area button:hover {
+  background-color: #19c37d;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .chat-body { padding: 15px; }
+  .chat-input-area { padding: 15px; }
+  .message-bubble { max-width: 85%; }
+}
