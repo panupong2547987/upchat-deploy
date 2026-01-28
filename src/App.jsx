@@ -5,7 +5,7 @@ import './App.css';
 function App() {
   // 1. state สำหรับหน้าจอแชทปัจจุบัน
   const [messages, setMessages] = useState([
-    { id: 1, text: "สวัสดีครับ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
+    { id: 1, text: "สวัสดีค่ะ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
   ]);
   
   // 2. state สำหรับเก็บ "ประวัติการแชททั้งหมด" (Array ของก้อนข้อมูลแชท)
@@ -38,7 +38,7 @@ function App() {
 
     // ล้างหน้าจอ กลับไปเป็นค่าเริ่มต้น
     setMessages([
-      { id: Date.now(), text: "สวัสดีครับ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
+      { id: Date.now(), text: "สวัสดีค่ะ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
     ]);
   };
 
@@ -47,15 +47,13 @@ function App() {
     // ก่อนเปลี่ยน ถ้าอันปัจจุบันมีของ ก็เซฟเก็บก่อนนะ (กันหาย)
     if (messages.length > 1) {
         // เช็คว่าอันปัจจุบันเคยเซฟไปหรือยัง ถ้ายังให้เซฟ (Logic นี้ทำแบบง่ายๆ ไปก่อน)
-        // เพื่อความง่าย: ตอนนี้พอกดโหลดของเก่า ของปัจจุบันที่ยังไม่กด New Chat อาจจะหาย
-        // แต่ตาม Flow คือ User ควรกด New Chat เพื่อจบอันเก่าครับ
     }
     
     // โหลดข้อความเก่ามาใส่หน้าจอ
     setMessages(historyItem.messages);
   };
 
-  // --- ฟังก์ชันส่งข้อความ (เหมือนเดิม) ---
+  // --- ฟังก์ชันส่งข้อความ ---
   const handleSend = async () => {
     if (input.trim() === "") return;
 
@@ -67,7 +65,10 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/chat', {
+      // ************************************************************
+      // ✅ แก้เป็นลิ้งค์ Server จริงบน Render แล้ว (ใช้ได้ทั้งคอมและมือถือ)
+      // ************************************************************
+      const response = await fetch('https://upchat-backend.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userInput })
