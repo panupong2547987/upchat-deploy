@@ -68,7 +68,7 @@ function App() {
       // ************************************************************
       // ✅ แก้เป็นลิ้งค์ Server จริงบน Render แล้ว (ใช้ได้ทั้งคอมและมือถือ)
       // ************************************************************
-      const response = await fetch('https://upchat-backend.onrender.com/chat', {
+      const response = await fetch('https://upchat-bn.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userInput })
