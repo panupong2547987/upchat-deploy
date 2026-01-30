@@ -2,23 +2,25 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
+  // 1. state สำหรับหน้าจอแชทปัจจุบัน
   const [messages, setMessages] = useState([
     { id: 1, text: "สวัสดีค่ะ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
   ]);
   
+  // 2. state สำหรับเก็บประวัติและข้อมูลผู้ใช้
   const [chatHistory, setChatHistory] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userName, setUserName] = useState("User"); // สำหรับตั้งชื่อ
-  const [isDarkMode, setIsDarkMode] = useState(true); // สำหรับ Dark/Light mode
+  const [userName, setUserName] = useState("User"); // สำหรับตั้งชื่อผู้ใช้
   const [showSettings, setShowSettings] = useState(false); // สำหรับเปิด/ปิดหน้า Setting
   const chatEndRef = useRef(null);
 
+  // เลื่อนหน้าจอลงล่างสุดอัตโนมัติเมื่อมีข้อความใหม่
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // --- ฟังก์ชัน 1: New Chat ---
+  // --- ฟังก์ชัน 1: New Chat (เริ่มใหม่และบันทึกประวัติ) ---
   const handleNewChat = () => {
     if (messages.length > 1) {
       const firstUserMessage = messages.find(m => m.sender === 'user');
@@ -32,6 +34,7 @@ function App() {
       };
       setChatHistory(prev => [newHistoryItem, ...prev]);
     }
+    // ล้างหน้าจอ พร้อมทักทายด้วยชื่อที่ตั้งไว้
     setMessages([{ id: Date.now(), text: `สวัสดีค่ะคุณ ${userName}! มีอะไรให้ช่วยไหม?`, sender: "bot" }]);
   };
 
@@ -49,10 +52,12 @@ function App() {
     }
   };
 
+  // --- ฟังก์ชัน 4: โหลดประวัติเก่ามาแสดง ---
   const handleLoadHistory = (historyItem) => {
     setMessages(historyItem.messages);
   };
 
+  // --- ฟังก์ชันส่งข้อความไปหา Backend ---
   const handleSend = async () => {
     if (input.trim() === "") return;
     const userMessage = { id: Date.now(), text: input, sender: "user" };
@@ -78,12 +83,12 @@ function App() {
   };
 
   return (
-    <div className={`app-container ${isDarkMode ? 'dark' : 'light'}`}>
+    <div className="app-container"> {/* ลบ class isDarkMode ออกเพื่อให้ใช้ CSS หลักอันเดียว */}
       
-      {/* --- Sidebar --- */}
+      {/* --- Sidebar (ประวัติการแชท) --- */}
       <div className="sidebar">
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
-        <div className="history-label">History</div>
+        <div className="history-label" style={{padding: '10px 12px', fontSize: '0.75rem', color: '#8e8ea0'}}>History</div>
         <div className="history-list">
           {chatHistory.map((item) => (
             <div key={item.id} className="history-item" onClick={() => handleLoadHistory(item)}>
@@ -97,7 +102,7 @@ function App() {
         </div>
       </div>
 
-      {/* --- Chat Window --- */}
+      {/* --- Chat Window (หน้าต่างแชท) --- */}
       <div className="chat-window">
         <div className="chat-header"><h3>🟣 UP Chat</h3></div>
         <div className="chat-body">
@@ -109,18 +114,29 @@ function App() {
               <div className="message-text">{msg.text}</div>
             </div>
           ))}
-          {isLoading && <div className="loading">...</div>}
+          {isLoading && (
+            <div className="message-bubble bot-msg">
+              <div className="avatar" style={{backgroundColor: '#19c37d'}}>AI</div>
+              <div className="message-text">...</div>
+            </div>
+          )}
           <div ref={chatEndRef} />
         </div>
         <div className="chat-input-area">
           <div className="input-wrapper">
-            <input type="text" placeholder="ถามมาได้เลย..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
+            <input 
+              type="text" 
+              placeholder="ถามมาได้เลย..." 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()} 
+            />
             <button onClick={handleSend}>➤</button>
           </div>
         </div>
       </div>
 
-      {/* --- Settings Modal --- */}
+      {/* --- Settings Modal (หน้าต่างตั้งค่า) --- */}
       {showSettings && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -129,10 +145,7 @@ function App() {
               <label>User Name:</label>
               <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} />
             </div>
-            <div className="setting-row">
-              <label>Dark Mode:</label>
-              <button onClick={() => setIsDarkMode(!isDarkMode)}>{isDarkMode ? "🌙 On" : "☀️ Off"}</button>
-            </div>
+            {/* ลบปุ่มสลับ Dark Mode ออกตามความต้องการ */}
             <div className="setting-row">
               <button className="danger-btn" onClick={clearAllHistory}>🗑️ Clear All History</button>
             </div>

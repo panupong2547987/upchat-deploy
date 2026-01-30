@@ -1,4 +1,4 @@
-/* src/App.css - ฉบับแก้ไข Layout เพี้ยนและปรับปรุง Light Mode */
+/* src/App.css - Dark Mode Only Version */
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
 
 * {
@@ -9,7 +9,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Kanit', sans-serif;
-  background-color: #343541;
+  background-color: #343541; /* สีพื้นหลังหลัก */
   color: white;
   height: 100vh;
   width: 100vw;
@@ -21,10 +21,9 @@ body {
   display: flex;
   height: 100vh;
   width: 100vw;
-  transition: background 0.3s;
 }
 
-/* --- 1. Sidebar --- */
+/* --- 1. Sidebar (แถบประวัติด้านซ้าย) --- */
 .sidebar {
   width: 260px;
   background-color: #202123;
@@ -33,7 +32,7 @@ body {
   padding: 10px;
   border-right: 1px solid #4d4d4f;
   z-index: 10;
-  flex-shrink: 0; /* ป้องกัน Sidebar โดนบีบ */
+  flex-shrink: 0;
 }
 
 .new-chat-btn {
@@ -88,9 +87,10 @@ body {
   cursor: pointer;
   opacity: 0;
   font-size: 0.8rem;
+  color: #8e8ea0;
 }
 
-.history-item:hover .del-btn { opacity: 0.6; }
+.history-item:hover .del-btn { opacity: 1; }
 
 .sidebar-footer {
   margin-top: auto;
@@ -111,14 +111,14 @@ body {
 
 .settings-btn:hover { background-color: #2a2b32; }
 
-/* --- 2. Chat Window --- */
+/* --- 2. Chat Window (พื้นที่แชทด้านขวา) --- */
 .chat-window {
   flex: 1;
   display: flex;
   flex-direction: column;
   background-color: #343541;
   position: relative;
-  min-width: 0; /* สำคัญ: ป้องกันเนื้อหาดันจอ */
+  min-width: 0;
 }
 
 .chat-header {
@@ -130,7 +130,7 @@ body {
 
 .chat-body {
   flex: 1;
-  padding: 20px 15%;
+  padding: 20px 15%; /* เว้นขอบข้างละ 15% ให้ดูสวยเหมือน ChatGPT */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -141,7 +141,7 @@ body {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  max-width: 80%;
+  max-width: 85%;
   width: fit-content;
   padding: 12px 16px;
   font-size: 1rem;
@@ -170,6 +170,7 @@ body {
   justify-content: center;
   font-weight: bold;
   font-size: 0.8rem;
+  color: white;
 }
 
 .chat-input-area {
@@ -209,7 +210,11 @@ body {
 }
 
 .modal-content {
-  background: #202123; padding: 25px; border-radius: 12px; width: 350px; color: white;
+  background: #202123; 
+  padding: 25px; 
+  border-radius: 12px; 
+  width: 350px; 
+  color: white;
   border: 1px solid #4d4d4f;
 }
 
@@ -218,32 +223,20 @@ body {
 }
 
 .setting-row input {
-  background: #40414f; border: 1px solid #565869; color: white; padding: 5px 10px; border-radius: 4px;
+  background: #40414f; border: 1px solid #565869; color: white; padding: 8px 10px; border-radius: 4px; outline: none;
 }
 
 .danger-btn {
-  background: #d9534f; color: white; border: none; width: 100%; padding: 10px; border-radius: 5px; cursor: pointer;
+  background: #d9534f; color: white; border: none; width: 100%; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: 500;
 }
 
 .close-btn {
   background: transparent; color: #8e8ea0; border: none; width: 100%; padding: 10px; cursor: pointer; margin-top: 10px;
 }
 
-/* --- 4. ปรับปรุง Light Mode --- */
-.app-container.light { background-color: #fff; color: #000; }
-.app-container.light .sidebar { background-color: #f8f9fa; border-right: 1px solid #e5e7eb; }
-.app-container.light .chat-window { background-color: #fff; }
-.app-container.light .chat-header { border-bottom: 1px solid #e5e7eb; color: #000; }
-.app-container.light .bot-msg { background-color: #f7f7f8; color: #000; border: 1px solid #e5e7eb; }
-.app-container.light .input-wrapper { background-color: #fff; border: 1px solid #d1d5db; }
-.app-container.light .input-wrapper input { color: #000; }
-.app-container.light .history-item { color: #4b5563; }
-.app-container.light .history-item:hover { background-color: #ececf1; }
-.app-container.light .settings-btn { color: #4b5563; }
-.app-container.light .modal-content { background: #fff; color: #000; border: 1px solid #e5e7eb; }
-
-/* Responsive */
+/* Responsive (สำหรับมือถือ) */
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .chat-body, .chat-input-area { padding: 10px; }
+  .message-bubble { max-width: 90%; }
 }
