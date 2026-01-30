@@ -1,175 +1,92 @@
-/* --- 3. ระบบ Modal (หน้า Settings) --- */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7); /* พื้นหลังมืดโปร่งแสง */
+/* src/App.css */
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Kanit', sans-serif;
+  background-color: #343541;
+  color: white;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* --- คอนเทนเนอร์หลัก --- */
+.app-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px); /* ทำพื้นหลังเบลอให้ดูหรูขึ้น */
+  height: 100vh;
+  width: 100vw;
+  transition: background 0.3s;
 }
 
-.modal-content {
-  background: #202123;
-  padding: 30px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 400px;
-  color: white;
-  border: 1px solid #4d4d4f;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-
-.modal-content h2 {
-  margin-top: 0;
-  margin-bottom: 25px;
-  font-weight: 500;
-  text-align: center;
-  color: #ececf1;
-}
-
-.setting-row {
-  margin: 20px 0;
+/* --- 1. Sidebar --- */
+.sidebar {
+  width: 260px;
+  background-color: #202123;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.setting-row label {
-  font-size: 0.95rem;
-  color: #d1d5db;
-}
-
-.setting-row input {
-  background: #40414f;
-  border: 1px solid #565869;
-  border-radius: 5px;
-  padding: 8px 12px;
-  color: white;
-  width: 180px;
-  outline: none;
-}
-
-.setting-row button {
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  border: 1px solid #565869;
-  background: #40414f;
-  color: white;
-  transition: 0.2s;
-}
-
-.setting-row button:hover {
-  background: #2f303d;
-}
-
-/* ปุ่มล้างประวัติ (สีแดง) */
-.danger-btn {
-  background: #d9534f !important;
-  color: white !important;
-  border: none !important;
-  width: 100%;
-  padding: 12px !important;
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-.danger-btn:hover {
-  background: #c9302c !important;
-}
-
-.close-btn {
-  width: 100%;
-  margin-top: 20px;
+  flex-direction: column;
   padding: 10px;
-  background: transparent;
+  border-right: 1px solid #4d4d4f;
+  z-index: 10;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid #565869;
-  color: #ececf1;
+  border-radius: 5px;
+  background-color: transparent;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.new-chat-btn:hover { background-color: #2f303d; }
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.history-item {
+  padding: 12px;
   border-radius: 5px;
   cursor: pointer;
-}
-
-.close-btn:hover {
-  background: #2f303d;
-}
-
-/* --- 4. การจัดการโหมดสว่าง (Light Mode) --- */
-.app-container.light {
-  background-color: #ffffff;
-  color: #202123;
-}
-
-.app-container.light .sidebar {
-  background-color: #f9f9f9;
-  border-right: 1px solid #e5e5e5;
-}
-
-.app-container.light .chat-window, 
-.app-container.light .chat-input-area {
-  background-color: #ffffff;
-}
-
-.app-container.light .chat-header {
-  border-bottom: 1px solid #e5e5e5;
-  color: #202123;
-}
-
-.app-container.light .history-item {
-  color: #444654;
-}
-
-.app-container.light .history-item:hover {
-  background-color: #ececf1;
-}
-
-.app-container.light .bot-msg {
-  background-color: #f7f7f8;
-  color: #202123;
-}
-
-.app-container.light .input-wrapper {
-  background-color: #ffffff;
-  border: 1px solid #e5e5e5;
-}
-
-.app-container.light .chat-input-area input {
-  color: #202123;
-}
-
-/* --- 5. ปุ่มลบ (🗑️) ใน Sidebar --- */
-.history-item {
+  font-size: 0.85rem;
+  color: #ececf1;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
 }
 
-.history-item span.truncate {
-  flex: 1;
+.history-item:hover { background-color: #2a2b32; }
+
+.truncate {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .del-btn {
   background: transparent;
   border: none;
-  font-size: 0.8rem;
-  opacity: 0; /* ซ่อนไว้ก่อน */
   cursor: pointer;
-  padding: 5px;
-  transition: opacity 0.2s;
+  opacity: 0;
 }
 
-.history-item:hover .del-btn {
-  opacity: 0.6; /* แสดงเมื่อเอาเมาส์ไปวาง */
-}
-
-.del-btn:hover {
-  opacity: 1 !important;
-}
+.history-item:hover .del-btn { opacity: 0.6; }
 
 .sidebar-footer {
   margin-top: auto;
@@ -188,18 +105,138 @@
   border-radius: 5px;
 }
 
-.settings-btn:hover {
-  background: #2a2b32;
+.settings-btn:hover { background-color: #2a2b32; }
+
+/* --- 2. Chat Window --- */
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #343541;
+  position: relative;
 }
 
-/* ปรับแต่ง Light Mode สำหรับ Modal */
-.app-container.light .modal-content {
-  background: #ffffff;
-  color: #202123;
-  border: 1px solid #e5e5e5;
+.chat-header {
+  padding: 15px;
+  border-bottom: 1px solid #2a2b32;
+  text-align: center;
+  color: #d1d5db;
 }
-.app-container.light .setting-row input {
-  background: #f9f9f9;
-  color: #202123;
-  border: 1px solid #ddd;
+
+.chat-body {
+  flex: 1;
+  padding: 20px 15%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.message-bubble {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 80%;
+  width: fit-content;
+  padding: 12px 16px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.bot-msg {
+  align-self: flex-start;
+  background-color: #444654;
+  border-radius: 15px 15px 15px 5px;
+}
+
+.user-msg {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+  background-color: #444654;
+  border-radius: 15px 15px 5px 15px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.chat-input-area {
+  padding: 20px 15% 40px 15%;
+}
+
+.input-wrapper {
+  background-color: #40414f;
+  border: 1px solid #565869;
+  border-radius: 12px;
+  display: flex;
+  padding: 5px 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+.input-wrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 12px;
+  outline: none;
+}
+
+.input-wrapper button {
+  background: transparent;
+  border: none;
+  color: #19c37d;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+/* --- 3. Settings Modal --- */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+
+.modal-content {
+  background: #202123; padding: 25px; border-radius: 12px; width: 350px; color: white;
+  border: 1px solid #4d4d4f;
+}
+
+.setting-row {
+  display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
+}
+
+.setting-row input {
+  background: #40414f; border: 1px solid #565869; color: white; padding: 5px 10px; border-radius: 4px;
+}
+
+.danger-btn {
+  background: #d9534f; color: white; border: none; width: 100%; padding: 10px; border-radius: 5px; cursor: pointer;
+}
+
+.close-btn {
+  background: transparent; color: #8e8ea0; border: none; width: 100%; padding: 10px; cursor: pointer; margin-top: 10px;
+}
+
+/* --- 4. Light Mode --- */
+.app-container.light { background-color: #fff; color: #000; }
+.app-container.light .sidebar { background-color: #f9f9f9; }
+.app-container.light .chat-window { background-color: #fff; }
+.app-container.light .chat-header { border-bottom: 1px solid #e5e5e5; color: #000; }
+.app-container.light .bot-msg { background-color: #f7f7f8; color: #000; }
+.app-container.light .input-wrapper { background-color: #fff; border: 1px solid #e5e5e5; }
+.app-container.light .input-wrapper input { color: #000; }
+.app-container.light .history-item { color: #000; }
+.app-container.light .settings-btn { color: #000; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .chat-body, .chat-input-area { padding: 10px; }
 }
