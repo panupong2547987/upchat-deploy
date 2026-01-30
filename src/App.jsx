@@ -3,14 +3,11 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  // 1. state สำหรับหน้าจอแชทปัจจุบัน
   const [messages, setMessages] = useState([
     { id: 1, text: "สวัสดีค่ะ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
   ]);
   
-  // 2. state สำหรับเก็บ "ประวัติการแชททั้งหมด" (Array ของก้อนข้อมูลแชท)
   const [chatHistory, setChatHistory] = useState([]);
-  
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
@@ -19,37 +16,35 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // --- ฟังก์ชัน 1: กดปุ่ม New Chat (เริ่มใหม่) ---
+  // --- ฟังก์ชัน 1: กดปุ่ม New Chat (เริ่มใหม่และบันทึก) ---
   const handleNewChat = () => {
-    // ถ้าหน้าจอปัจจุบันมีการคุยกันแล้ว (มากกว่าแค่คำทักทาย) ให้เซฟเก็บก่อน
+    // เงื่อนไข: ถ้ามีการคุยกันแล้ว (User พิมพ์มาอย่างน้อย 1 ข้อความ)
     if (messages.length > 1) {
       const firstUserMessage = messages.find(m => m.sender === 'user');
-      const title = firstUserMessage ? firstUserMessage.text : "แชทใหม่";
+      const baseTitle = firstUserMessage ? firstUserMessage.text : "แชทใหม่";
+      
+      // เพิ่มเวลาเข้าไปที่ชื่อ เพื่อให้ไม่ซ้ำและบันทึกได้ทุกครั้ง
+      const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const finalTitle = `${baseTitle} (${timeString})`;
 
-      // 🔍 เพิ่มการเช็ค: ถ้าชื่อหัวข้อนี้ (title) มีอยู่ใน history แล้ว ไม่ต้องเพิ่มซ้ำ
-      const isDuplicate = chatHistory.some(item => item.title === title);
+      const newHistoryItem = {
+        id: Date.now(),
+        title: finalTitle,
+        messages: [...messages] // ก๊อปปี้ข้อความทั้งหมดเก็บไว้
+      };
 
-      if (!isDuplicate) {
-        const newHistoryItem = {
-          id: Date.now(),
-          title: title,       // เอาข้อความแรกของ User มาตั้งเป็นชื่อ
-          messages: messages  // เก็บข้อความทั้งก้อน
-        };
-
-        // เพิ่มเข้าลิสต์ประวัติ (เอาของใหม่ไว้บนสุด)
-        setChatHistory(prev => [newHistoryItem, ...prev]);
-      }
+      // เพิ่มเข้าประวัติทันที (เอาของใหม่ขึ้นบนสุด)
+      setChatHistory(prev => [newHistoryItem, ...prev]);
     }
 
-    // ล้างหน้าจอ กลับไปเป็นค่าเริ่มต้น
+    // ล้างหน้าจอแชทปัจจุบัน เพื่อเริ่มใหม่
     setMessages([
       { id: Date.now(), text: "สวัสดีค่ะ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
     ]);
   };
 
-  // --- ฟังก์ชัน 2: กดเลือกดูประวัติเก่า ---
+  // --- ฟังก์ชัน 2: โหลดประวัติเก่ามาดู ---
   const handleLoadHistory = (historyItem) => {
-    // โหลดข้อความเก่ามาใส่หน้าจอ
     setMessages(historyItem.messages);
   };
 
@@ -65,9 +60,6 @@ function App() {
     setIsLoading(true);
 
     try {
-      // ************************************************************
-      // ✅ ลิ้งค์ Server จริงบน Render
-      // ************************************************************
       const response = await fetch('https://upchat-bn.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -93,10 +85,7 @@ function App() {
 
   return (
     <div className="app-container">
-      
-      {/* --- Sidebar (ประวัติ) --- */}
       <div className="sidebar">
-        {/* ปุ่ม New Chat */}
         <button className="new-chat-btn" onClick={handleNewChat}>
           <span>+</span> New chat
         </button>
@@ -124,7 +113,6 @@ function App() {
         </div>
       </div>
 
-      {/* --- Chat Window --- */}
       <div className="chat-window">
         <div className="chat-header">
           <h3>🟣 UP Chat</h3>
@@ -148,7 +136,6 @@ function App() {
               <div className="message-text">...</div>
             </div>
           )}
-          
           <div ref={chatEndRef} />
         </div>
 
