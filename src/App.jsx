@@ -85,7 +85,6 @@ function App() {
   };
 
   const handleNewChat = () => {
-    // 🛑 สั่งหยุดบอททันที ถ้ามีการโหลดค้างอยู่
     if (abortControllerRef.current) abortControllerRef.current.abort();
     setIsLoading(false);
 
@@ -115,28 +114,20 @@ function App() {
   const handleLoadHistory = (item) => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     setIsLoading(false);
-
     setMessages(item.messages);
     setCurrentChatId(item.id);
     setIsSidebarOpen(false);
   };
 
-  // 📝 ฟังก์ชันแก้ไข (Edit) พร้อมระบบเบรคหัวทิ่ม 🛑
   const handleEditMessage = (e, id, text) => {
     e.stopPropagation(); 
-    
-    // 1. สั่งหยุดบอททันที!
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    setIsLoading(false); // ปิดสถานะ loading
-
-    // 2. เอาข้อความคืนมา
+    setIsLoading(false);
     setInput(text);
     setActiveMessageId(null);
-
-    // 3. ลบข้อความเก่า + คำตอบบอท (ถ้ามี)
     setMessages(prev => {
       const index = prev.findIndex(m => m.id === id);
       if (index !== -1) {
@@ -147,7 +138,6 @@ function App() {
       }
       return prev;
     });
-    
     document.querySelector('.input-wrapper input')?.focus();
   };
 
@@ -158,17 +148,17 @@ function App() {
     alert("คัดลอกเรียบร้อย! ✅");
   };
 
+  // 🟢 ฟังก์ชันนี้สำคัญที่สุด: กันนิ้วทะลุ
   const handleMessageClick = (id) => {
+    // ถ้า Sidebar เปิดอยู่ ให้หยุดทำงานทันที (ห้ามเปิดเมนู Copy)
+    if (isSidebarOpen) return; 
+
     setActiveMessageId(prev => prev === id ? null : id);
   };
 
   const handleSend = async () => {
     if (input.trim() === "") return;
-
-    // เคลียร์ Controller เก่า (ถ้ามี)
     if (abortControllerRef.current) abortControllerRef.current.abort();
-
-    // 🟢 สร้าง Controller ใหม่สำหรับรอบนี้
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -184,20 +174,16 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userInput }),
-        signal: controller.signal // 👈 ผูกสัญญาณเบรคไว้ตรงนี้
+        signal: controller.signal
       });
       const data = await response.json();
       const botMessage = { id: Date.now() + 1, text: data.text, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log("🛑 การส่งข้อความถูกยกเลิก (User กด Edit)");
-      } else {
+      if (error.name !== 'AbortError') {
         setMessages((prev) => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้ครับ", sender: "bot" }]);
       }
     } finally {
-      // เช็คหน่อยว่าถ้า Abort ไปแล้ว ไม่ต้องปิด Loading (เพราะ handleEdit ปิดให้แล้ว)
-      // แต่ถ้าจบปกติ ก็ปิด Loading ตามระเบียบ
       if (abortControllerRef.current === controller) {
         setIsLoading(false);
         abortControllerRef.current = null;
@@ -234,7 +220,6 @@ function App() {
               <span>Change Avatar</span>
               <input id="footer-file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{display: 'none'}} />
             </label>
-            
             <div className="menu-divider"></div>
             <button className="menu-item danger" onClick={clearAllHistory}>🗑️ Clear History</button>
           </div>
