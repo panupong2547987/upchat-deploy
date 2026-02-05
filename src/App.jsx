@@ -2,17 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const formatMessage = (text) => {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = text.split(urlRegex);
-    return parts.map((part, index) => {
-      if (part.match(urlRegex)) {
-        return <a key={index} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#19c37d', textDecoration: 'underline' }}>{part}</a>;
-      }
-      return part;
-    });
-  };
-
+  // --- 1. Constants & Helper Functions ---
   const defaultWelcomeMessage = { 
     id: 1, 
     text: `สวัสดีครับ 🙏 ยินดีต้อนรับสู่ UP Chat ระบบผู้ช่วยตอบคำถามอัตโนมัติ พร้อมให้บริการครับ!
@@ -28,51 +18,65 @@ function App() {
     sender: "bot" 
   };
 
-  const [currentChatId, setCurrentChatId] = useState(Date.now());
+  const formatMessage = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.split(urlRegex).map((part, index) => 
+      part.match(urlRegex) 
+        ? <a key={index} href={part} target="_blank" rel="noopener noreferrer">{part}</a> 
+        : part
+    );
+  };
+
+  // --- 2. State Management ---
+  // Chat Data
   const [messages, setMessages] = useState([defaultWelcomeMessage]);
+  const [currentChatId, setCurrentChatId] = useState(Date.now());
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Settings & Sidebar
-  const [showSettings, setShowSettings] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const chatEndRef = useRef(null);
-  const closeMenuTimer = useRef(null);
-  const abortControllerRef = useRef(null);
+  const [chatHistory, setChatHistory] = useState(() => JSON.parse(localStorage.getItem('upchat_history')) || []);
 
-  const [activeMessageId, setActiveMessageId] = useState(null);
+  // UI State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeMessageId, setActiveMessageId] = useState(null); // สำหรับมือถือ (Tap to show menu)
+
+  // User Data
   const [userName, setUserName] = useState(() => localStorage.getItem('upchat_username') || "User");
   const [profileImage, setProfileImage] = useState(() => localStorage.getItem('upchat_profile_image') || null);
-  
-  const [chatHistory, setChatHistory] = useState(() => {
-    const saved = localStorage.getItem('upchat_history');
-    return saved ? JSON.parse(saved) : [];
-  });
 
+  // Refs
+  const chatEndRef = useRef(null);
+  const closeMenuTimer = useRef(null);
+  const abortControllerRef = useRef(null); // ไว้เบรคบอทตอนกด Edit
+
+  // --- 3. Effects ---
+  // Auto-scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Auto-save history
   useEffect(() => {
     if (messages.length <= 1) return;
     setChatHistory(prev => {
       const idx = prev.findIndex(item => item.id === currentChatId);
       if (idx > -1) {
         const updated = [...prev];
-        updated[idx] = { ...updated[idx], messages: messages };
+        updated[idx] = { ...updated[idx], messages };
         return updated;
-      } else {
-        const firstUserMsg = messages.find(m => m.sender === 'user');
-        const title = firstUserMsg ? firstUserMsg.text : "New Chat";
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return [{ id: currentChatId, title: `${title} (${time})`, messages }, ...prev];
       }
+      const firstUserMsg = messages.find(m => m.sender === 'user');
+      const title = firstUserMsg ? firstUserMsg.text : "New Chat";
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return [{ id: currentChatId, title: `${title} (${time})`, messages }, ...prev];
     });
   }, [messages, currentChatId]);
 
+  // Persist Data to LocalStorage
   useEffect(() => { localStorage.setItem('upchat_history', JSON.stringify(chatHistory)); }, [chatHistory]);
   useEffect(() => { if (profileImage) localStorage.setItem('upchat_profile_image', profileImage); }, [profileImage]);
 
+  // --- 4. Handlers: Settings & UI ---
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -82,6 +86,14 @@ function App() {
     }
   };
 
+  // ปิด Sidebar และ Settings พร้อมกัน (แก้ปัญหาค้าง)
+  const handleCloseOverlay = (e) => {
+    e.stopPropagation();
+    setIsSidebarOpen(false);
+    setShowSettings(false);
+  };
+
+  // --- 5. Handlers: Chat Logic ---
   const handleNewChat = () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     setIsLoading(false);
@@ -100,11 +112,10 @@ function App() {
   };
 
   const clearAllHistory = () => {
-    if(window.confirm("⚠️ ยืนยันล้างประวัติทั้งหมด?")) {
+    if (window.confirm("⚠️ ยืนยันล้างประวัติทั้งหมด?")) {
       setChatHistory([]);
       localStorage.removeItem('upchat_history');
       handleNewChat();
-      setShowSettings(false);
     }
   };
 
@@ -116,13 +127,17 @@ function App() {
     setIsSidebarOpen(false);
   };
 
+  // --- 6. Handlers: Message Actions (Edit/Copy) ---
   const handleEditMessage = (e, id, text) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
+    // 🛑 เบรคบอททันที
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setIsLoading(false);
+    
+    // ดึงข้อความคืนและลบอันเก่า
     setInput(text);
     setActiveMessageId(null);
     setMessages(prev => {
@@ -130,6 +145,7 @@ function App() {
       if (index !== -1) {
         const newMsgs = [...prev];
         const nextMsg = newMsgs[index + 1];
+        // ลบเป็นคู่ (User + Bot) ถ้ามี
         newMsgs.splice(index, (nextMsg && nextMsg.sender === 'bot') ? 2 : 1);
         return newMsgs;
       }
@@ -146,19 +162,21 @@ function App() {
   };
 
   const handleMessageClick = (id) => {
-    if (isSidebarOpen) return; 
+    // 🛡️ กันนิ้วทะลุ: ถ้า Sidebar เปิดอยู่ ห้ามกดข้อความ
+    if (isSidebarOpen) return;
     setActiveMessageId(prev => prev === id ? null : id);
   };
 
   const handleSend = async () => {
     if (input.trim() === "") return;
+    
+    // Reset Controller
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const userMessage = { id: Date.now(), text: input, sender: "user" };
-    setMessages((prev) => [...prev, userMessage]);
     const userInput = input;
+    setMessages(prev => [...prev, { id: Date.now(), text: userInput, sender: "user" }]);
     setInput("");
     setIsLoading(true);
     setActiveMessageId(null);
@@ -171,11 +189,10 @@ function App() {
         signal: controller.signal
       });
       const data = await response.json();
-      const botMessage = { id: Date.now() + 1, text: data.text, sender: "bot" };
-      setMessages((prev) => [...prev, botMessage]);
+      setMessages(prev => [...prev, { id: Date.now() + 1, text: data.text, sender: "bot" }]);
     } catch (error) {
       if (error.name !== 'AbortError') {
-        setMessages((prev) => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้ครับ", sender: "bot" }]);
+        setMessages(prev => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้ครับ", sender: "bot" }]);
       }
     } finally {
       if (abortControllerRef.current === controller) {
@@ -185,22 +202,18 @@ function App() {
     }
   };
 
+  // --- 7. Render ---
   return (
-    <div className="app-container" onClick={() => setActiveMessageId(null)}> 
+    <div className="app-container" onClick={() => setActiveMessageId(null)}>
       
-      {/* 🟢 แก้ตรงนี้ครับ: กด Overlay -> ปิด Sidebar -> และปิด Settings ด้วย! */}
-      <div 
-        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
-        onClick={(e) => { 
-          e.stopPropagation(); 
-          setIsSidebarOpen(false); 
-          setShowSettings(false); // 👈 เพิ่มบรรทัดนี้ครับ สั่งปิด Settings
-        }} 
-      />
+      {/* Overlay: ปิดทั้ง Sidebar และ Settings */}
+      <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={handleCloseOverlay} />
 
+      {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
-        <div className="history-label" style={{padding: '10px 12px', fontSize: '0.75rem', color: '#8e8ea0'}}>History</div>
+        
+        <div className="history-label">History</div>
         <div className="history-list">
           {chatHistory.map((item) => (
             <div key={item.id} className={`history-item ${item.id === currentChatId ? 'active-history' : ''}`} onClick={() => handleLoadHistory(item)}>
@@ -210,8 +223,9 @@ function App() {
           ))}
         </div>
 
-        <div className="sidebar-footer" 
-             onMouseEnter={() => window.innerWidth > 768 && setShowSettings(true)} 
+        {/* Footer & Settings Menu */}
+        <div className="sidebar-footer"
+             onMouseEnter={() => window.innerWidth > 768 && setShowSettings(true)}
              onMouseLeave={() => { if(window.innerWidth > 768) closeMenuTimer.current = setTimeout(() => setShowSettings(false), 300); }}
         >
           <div className={`settings-popup ${showSettings ? 'show' : ''}`} onMouseEnter={() => clearTimeout(closeMenuTimer.current)}>
@@ -230,11 +244,13 @@ function App() {
         </div>
       </div>
 
+      {/* Chat Window */}
       <div className="chat-window">
         <div className="chat-header" onClick={(e) => e.stopPropagation()}>
           <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>
           <h3>🟣 UP Chat</h3>
         </div>
+
         <div className="chat-body">
           {messages.map((msg) => (
             <div 
@@ -243,12 +259,13 @@ function App() {
               onClick={(e) => { e.stopPropagation(); handleMessageClick(msg.id); }}
             >
               <div className="avatar" style={{ backgroundColor: msg.sender === 'user' ? (profileImage ? 'transparent' : '#7b2cbf') : '#19c37d' }}>
-                {msg.sender === 'user' && profileImage ? <img src={profileImage} alt="User" className="avatar-img" /> : (msg.sender === 'user' ? userName[0].toUpperCase() : 'AI')}
+                {msg.sender === 'user' && profileImage ? 
+                  <img src={profileImage} alt="User" className="avatar-img" /> : 
+                  (msg.sender === 'user' ? userName[0].toUpperCase() : 'AI')}
               </div>
               
               <div className="message-text">
                 {formatMessage(msg.text)}
-                
                 <div className="message-actions">
                   <button className="action-btn" onClick={(e) => handleCopyMessage(e, msg.text)} title="คัดลอก">📋</button>
                   {msg.sender === 'user' && (
@@ -266,6 +283,7 @@ function App() {
           )}
           <div ref={chatEndRef} />
         </div>
+
         <div className="chat-input-area" onClick={(e) => e.stopPropagation()}>
           <div className="input-wrapper">
             <input type="text" placeholder="ถามมาได้เลยครับ..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
