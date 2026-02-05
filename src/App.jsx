@@ -14,7 +14,7 @@ function App() {
     });
   };
 
-  // 📝 ข้อความต้อนรับมาตรฐาน (แยกออกมาเป็นตัวแปร จะได้เรียกใช้ง่ายๆ)
+  // 📝 ข้อความต้อนรับมาตรฐาน
   const defaultWelcomeMessage = { 
     id: 1, 
     text: `สวัสดีครับ 🙏 ยินดีต้อนรับสู่ UP Chat ระบบผู้ช่วยตอบคำถามอัตโนมัติ พร้อมให้บริการครับ!
@@ -30,17 +30,38 @@ function App() {
     sender: "bot" 
   };
 
-  // 1. 💾 State: หน้าจอแชทปัจจุบัน (โหลดจาก LocalStorage ถ้าไม่มีให้ใช้ค่าเริ่มต้น)
-  const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('upchat_current_messages');
-    return savedMessages ? JSON.parse(savedMessages) : [defaultWelcomeMessage];
-  });
-  
-  // 2. 💾 State: ประวัติแชท (โหลดจาก LocalStorage)
+  // 1. 💾 State: ประวัติแชท (โหลดของเก่า + กู้แชทล่าสุดที่ค้างอยู่มาใส่)
   const [chatHistory, setChatHistory] = useState(() => {
     const savedHistory = localStorage.getItem('upchat_history');
-    return savedHistory ? JSON.parse(savedHistory) : [];
+    let parsedHistory = savedHistory ? JSON.parse(savedHistory) : [];
+
+    // 🕵️‍♂️ เช็คว่ามีแชทค้างจากรอบที่แล้วไหม? (ในกล่อง upchat_current_messages)
+    const lastSession = localStorage.getItem('upchat_current_messages');
+    if (lastSession) {
+      const parsedSession = JSON.parse(lastSession);
+      
+      // ✅ เงื่อนไข: ต้องมีการคุยกันแล้ว (ข้อความมากกว่า 1) ถึงจะเก็บ
+      if (parsedSession.length > 1) {
+        const firstUserMessage = parsedSession.find(m => m.sender === 'user');
+        // ตั้งชื่อหัวข้อจากข้อความแรก (ถ้าหาไม่เจอใช้ "แชทตกค้าง")
+        const baseTitle = firstUserMessage ? firstUserMessage.text : "แชทตกค้าง"; 
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const recoveredItem = {
+          id: Date.now(), // สร้าง ID ใหม่
+          title: `${baseTitle} (${timeString})`,
+          messages: parsedSession
+        };
+        
+        // 📥 ยัดแชทเก่า ใส่เข้าไปบนสุดของ History เลย!
+        parsedHistory = [recoveredItem, ...parsedHistory];
+      }
+    }
+    return parsedHistory;
   });
+
+  // 2. 💾 State: หน้าจอแชทปัจจุบัน (เริ่มใหม่เสมอ! ไม่โหลดของเก่ามาโชว์แล้ว)
+  const [messages, setMessages] = useState([defaultWelcomeMessage]);
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
