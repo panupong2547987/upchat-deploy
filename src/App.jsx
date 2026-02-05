@@ -39,10 +39,10 @@ function App() {
   const chatEndRef = useRef(null);
   const closeMenuTimer = useRef(null);
 
-  // 🟢 State สำหรับจำว่าข้อความไหนถูกกด (สำหรับมือถือ)
-  const [activeMessageId, setActiveMessageId] = useState(null);
+  // 🛑 Ref สำหรับสั่งหยุดบอท (AbortController)
+  const abortControllerRef = useRef(null);
 
-  // User Data
+  const [activeMessageId, setActiveMessageId] = useState(null);
   const [userName, setUserName] = useState(() => localStorage.getItem('upchat_username') || "User");
   const [profileImage, setProfileImage] = useState(() => localStorage.getItem('upchat_profile_image') || null);
   
@@ -85,6 +85,10 @@ function App() {
   };
 
   const handleNewChat = () => {
+    // 🛑 สั่งหยุดบอททันที ถ้ามีการโหลดค้างอยู่
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    setIsLoading(false);
+
     setMessages([defaultWelcomeMessage]);
     setCurrentChatId(Date.now());
     setIsSidebarOpen(false);
@@ -109,20 +113,30 @@ function App() {
   };
 
   const handleLoadHistory = (item) => {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    setIsLoading(false);
+
     setMessages(item.messages);
     setCurrentChatId(item.id);
     setIsSidebarOpen(false);
   };
 
-  const handleExportPDF = () => {
-    setShowSettings(false);
-    setTimeout(() => window.print(), 300);
-  };
-
+  // 📝 ฟังก์ชันแก้ไข (Edit) พร้อมระบบเบรคหัวทิ่ม 🛑
   const handleEditMessage = (e, id, text) => {
-    e.stopPropagation(); // ป้องกันไม่ให้ไป trigger การกดที่ bubble
+    e.stopPropagation(); 
+    
+    // 1. สั่งหยุดบอททันที!
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false); // ปิดสถานะ loading
+
+    // 2. เอาข้อความคืนมา
     setInput(text);
-    setActiveMessageId(null); // ปิดเมนู
+    setActiveMessageId(null);
+
+    // 3. ลบข้อความเก่า + คำตอบบอท (ถ้ามี)
     setMessages(prev => {
       const index = prev.findIndex(m => m.id === id);
       if (index !== -1) {
@@ -133,50 +147,66 @@ function App() {
       }
       return prev;
     });
+    
     document.querySelector('.input-wrapper input')?.focus();
   };
 
   const handleCopyMessage = (e, text) => {
-    e.stopPropagation(); // ป้องกันไม่ให้ไป trigger การกดที่ bubble
+    e.stopPropagation();
     navigator.clipboard.writeText(text);
-    setActiveMessageId(null); // ปิดเมนูหลังจากก๊อปเสร็จ
+    setActiveMessageId(null);
     alert("คัดลอกเรียบร้อย! ✅");
   };
 
-  // 🟢 ฟังก์ชันเมื่อกดที่ข้อความ (Toggle เมนู)
   const handleMessageClick = (id) => {
-    // ถ้ากดตัวเดิมให้ปิด ถ้ากดตัวใหม่ให้เปิด
     setActiveMessageId(prev => prev === id ? null : id);
   };
 
   const handleSend = async () => {
     if (input.trim() === "") return;
+
+    // เคลียร์ Controller เก่า (ถ้ามี)
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+
+    // 🟢 สร้าง Controller ใหม่สำหรับรอบนี้
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const userMessage = { id: Date.now(), text: input, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
     const userInput = input;
     setInput("");
     setIsLoading(true);
-    setActiveMessageId(null); // ปิดเมนูค้างเก่า (ถ้ามี)
+    setActiveMessageId(null);
 
     try {
       const response = await fetch('https://upchat-bn.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userInput })
+        body: JSON.stringify({ message: userInput }),
+        signal: controller.signal // 👈 ผูกสัญญาณเบรคไว้ตรงนี้
       });
       const data = await response.json();
       const botMessage = { id: Date.now() + 1, text: data.text, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้ครับ", sender: "bot" }]);
+      if (error.name === 'AbortError') {
+        console.log("🛑 การส่งข้อความถูกยกเลิก (User กด Edit)");
+      } else {
+        setMessages((prev) => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้ครับ", sender: "bot" }]);
+      }
     } finally {
-      setIsLoading(false);
+      // เช็คหน่อยว่าถ้า Abort ไปแล้ว ไม่ต้องปิด Loading (เพราะ handleEdit ปิดให้แล้ว)
+      // แต่ถ้าจบปกติ ก็ปิด Loading ตามระเบียบ
+      if (abortControllerRef.current === controller) {
+        setIsLoading(false);
+        abortControllerRef.current = null;
+      }
     }
   };
 
   return (
     <div className="app-container" onClick={() => setActiveMessageId(null)}> 
-      {/* 👆 ใส่ onClick ที่ container เพื่อให้แตะที่ว่างแล้วเมนูหุบลง */}
       
       <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(false); }} />
 
@@ -206,8 +236,6 @@ function App() {
             </label>
             
             <div className="menu-divider"></div>
-            <button className="menu-item" onClick={handleExportPDF}>📄 Save as PDF</button>
-            <div className="menu-divider"></div>
             <button className="menu-item danger" onClick={clearAllHistory}>🗑️ Clear History</button>
           </div>
           
@@ -225,7 +253,7 @@ function App() {
             <div 
               key={msg.id} 
               className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"} ${activeMessageId === msg.id ? 'active' : ''}`}
-              onClick={(e) => { e.stopPropagation(); handleMessageClick(msg.id); }} // กดแล้ว Toggle เมนู
+              onClick={(e) => { e.stopPropagation(); handleMessageClick(msg.id); }}
             >
               <div className="avatar" style={{ backgroundColor: msg.sender === 'user' ? (profileImage ? 'transparent' : '#7b2cbf') : '#19c37d' }}>
                 {msg.sender === 'user' && profileImage ? <img src={profileImage} alt="User" className="avatar-img" /> : (msg.sender === 'user' ? userName[0].toUpperCase() : 'AI')}
@@ -234,7 +262,6 @@ function App() {
               <div className="message-text">
                 {formatMessage(msg.text)}
                 
-                {/* 🟢 Action Buttons */}
                 <div className="message-actions">
                   <button className="action-btn" onClick={(e) => handleCopyMessage(e, msg.text)} title="คัดลอก">📋</button>
                   {msg.sender === 'user' && (
