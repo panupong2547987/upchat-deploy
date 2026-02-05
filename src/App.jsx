@@ -50,6 +50,9 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatEndRef = useRef(null);
+  
+  // ⏳ ตัวแปรสำหรับเก็บ Timer การปิดเมนู
+  const closeMenuTimer = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,6 +103,7 @@ function App() {
     setMessages([defaultWelcomeMessage]);
     setCurrentChatId(Date.now());
     setIsSidebarOpen(false);
+    setShowSettings(false); // ปิดเมนูเมื่อเริ่มแชทใหม่
   };
 
   const deleteHistoryItem = (e, id) => {
@@ -148,6 +152,35 @@ function App() {
     }
   };
 
+  // 🟢 ฟังก์ชันควบคุมการเปิดเมนู (เมาส์ชี้)
+  const handleMouseEnter = () => {
+    if (window.innerWidth > 768) {
+      // ยกเลิกคำสั่งปิด (ถ้ามี) เพราะเมาส์กลับเข้ามาแล้ว!
+      if (closeMenuTimer.current) {
+        clearTimeout(closeMenuTimer.current);
+        closeMenuTimer.current = null;
+      }
+      setShowSettings(true);
+    }
+  };
+
+  // 🟢 ฟังก์ชันควบคุมการปิดเมนู (เมาส์ออก) - แบบหน่วงเวลา
+  const handleMouseLeave = () => {
+    if (window.innerWidth > 768) {
+      // อย่าเพิ่งปิด! รอ 300ms เผื่อคนเลื่อนเมาส์กลับมาทัน
+      closeMenuTimer.current = setTimeout(() => {
+        setShowSettings(false);
+      }, 300); 
+    }
+  };
+
+  // 🟢 ฟังก์ชันกดปุ่ม (Toggle)
+  const toggleSettings = () => {
+    // ถ้ากดปุ่ม ให้ยกเลิก Timer แล้วสลับสถานะเลย
+    if (closeMenuTimer.current) clearTimeout(closeMenuTimer.current);
+    setShowSettings(!showSettings);
+  };
+
   return (
     <div className="app-container">
       <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
@@ -164,12 +197,11 @@ function App() {
           ))}
         </div>
 
-        {/* 🟢 ส่วน Footer: เพิ่มลูกเล่น Hover ตรงนี้ */}
+        {/* 🟢 Footer แบบใหม่: ใช้ระบบ Timer แทน CSS Hover ธรรมดา */}
         <div 
           className="sidebar-footer"
-          // เฉพาะในคอม: เมาส์ชี้ = เปิด, เมาส์ออก = ปิด
-          onMouseEnter={() => window.innerWidth > 768 && setShowSettings(true)}
-          onMouseLeave={() => window.innerWidth > 768 && setShowSettings(false)}
+          onMouseEnter={handleMouseEnter} 
+          onMouseLeave={handleMouseLeave}
         >
           {/* เมนู Pop-up */}
           <div className={`settings-popup ${showSettings ? 'show' : ''}`}>
@@ -189,10 +221,10 @@ function App() {
             </button>
           </div>
 
-          {/* ปุ่ม Settings (ยังกดคลิกได้ปกติ สำหรับมือถือ) */}
+          {/* ปุ่ม Settings (กดแล้วค้างแน่นอน) */}
           <button 
             className={`settings-btn ${showSettings ? 'active' : ''}`} 
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={toggleSettings}
           >
             ⚙️ Settings
           </button>
