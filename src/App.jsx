@@ -14,7 +14,7 @@ function App() {
     });
   };
 
-  // 📝 ข้อความต้อนรับมาตรฐาน
+  // 📝 ข้อความต้อนรับ
   const defaultWelcomeMessage = { 
     id: 1, 
     text: `สวัสดีครับ 🙏 ยินดีต้อนรับสู่ UP Chat ระบบผู้ช่วยตอบคำถามอัตโนมัติ พร้อมให้บริการครับ!
@@ -30,49 +30,21 @@ function App() {
     sender: "bot" 
   };
 
-  // 1. 💾 State: ประวัติแชท (Smart Merge: ไม่สร้างซ้ำถ้าหัวข้อเดิม)
+  // 1. 🆔 สร้าง ID สำหรับแชทรอบปัจจุบัน (สร้างใหม่ทุกครั้งที่รีเฟรชหน้าจอ)
+  const [currentChatId, setCurrentChatId] = useState(Date.now());
+
+  // 2. 💾 State: ประวัติแชท (โหลดจาก LocalStorage อย่างเดียว ไม่ต้องกู้ของเก่ามาปน)
   const [chatHistory, setChatHistory] = useState(() => {
     const savedHistory = localStorage.getItem('upchat_history');
-    let parsedHistory = savedHistory ? JSON.parse(savedHistory) : [];
-
-    const lastSession = localStorage.getItem('upchat_current_messages');
-    if (lastSession) {
-      const parsedSession = JSON.parse(lastSession);
-      
-      if (parsedSession.length > 1) {
-        const firstUserMessage = parsedSession.find(m => m.sender === 'user');
-        const baseTitle = firstUserMessage ? firstUserMessage.text : "แชทตกค้าง"; 
-        
-        // 🟢 เช็คว่าประวัติล่าสุด หัวข้อเหมือนกันไหม? (เช็คจากข้อความแรก)
-        const isSameSession = parsedHistory.length > 0 && 
-                              parsedHistory[0].title.startsWith(baseTitle);
-
-        if (isSameSession) {
-          // 🔄 ถ้าเหมือน: อัปเดตข้อความและเวลาของอันเดิม
-          parsedHistory[0].messages = parsedSession;
-          parsedHistory[0].title = `${baseTitle} (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
-        } else {
-          // 🆕 ถ้าไม่เหมือน: สร้างใหม่
-          const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const newHistoryItem = {
-            id: Date.now(),
-            title: `${baseTitle} (${timeString})`,
-            messages: parsedSession
-          };
-          parsedHistory = [newHistoryItem, ...parsedHistory];
-        }
-      }
-    }
-    return parsedHistory;
+    return savedHistory ? JSON.parse(savedHistory) : [];
   });
 
-  // 2. 💾 State: หน้าจอแชทปัจจุบัน (เริ่มใหม่เสมอ)
+  // 3. 💬 State: หน้าจอแชทปัจจุบัน (เริ่มใหม่เสมอ เมื่อเข้าเว็บ)
   const [messages, setMessages] = useState([defaultWelcomeMessage]);
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // 3. 💾 State: ชื่อผู้ใช้
   const [userName, setUserName] = useState(() => {
     return localStorage.getItem('upchat_username') || "User";
   });
@@ -81,14 +53,46 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatEndRef = useRef(null);
 
+  // เลื่อนจอลงล่างสุด
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // 🔥 4. ระบบ Real-time Save: พิมพ์ปุ๊บ อัปเดตลง History ปั๊บ!
   useEffect(() => {
-    localStorage.setItem('upchat_current_messages', JSON.stringify(messages));
-  }, [messages]);
+    // ถ้ายังไม่มีการคุย (มีแค่บอททัก) ไม่ต้องทำอะไร
+    if (messages.length <= 1) return;
 
+    setChatHistory(prevHistory => {
+      // เช็คว่า ID นี้มีในประวัติหรือยัง?
+      const existingIndex = prevHistory.findIndex(item => item.id === currentChatId);
+
+      if (existingIndex > -1) {
+        // 🔄 มีแล้ว: อัปเดตข้อความข้างใน (Update)
+        const updatedHistory = [...prevHistory];
+        updatedHistory[existingIndex] = {
+          ...updatedHistory[existingIndex],
+          messages: messages
+        };
+        return updatedHistory;
+      } else {
+        // 🆕 ยังไม่มี: สร้างรายการใหม่ (Create)
+        const firstUserMessage = messages.find(m => m.sender === 'user');
+        const title = firstUserMessage ? firstUserMessage.text : "New Chat";
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const newItem = {
+          id: currentChatId,
+          title: `${title} (${timeString})`,
+          messages: messages
+        };
+        // แทรกไว้บนสุด
+        return [newItem, ...prevHistory];
+      }
+    });
+  }, [messages, currentChatId]); // ทำงานทุกครั้งที่ messages เปลี่ยน
+
+  // บันทึก History ลงเครื่อง
   useEffect(() => {
     localStorage.setItem('upchat_history', JSON.stringify(chatHistory));
   }, [chatHistory]);
@@ -98,58 +102,38 @@ function App() {
   }, [userName]);
 
 
-  // --- ฟังก์ชัน 1: New Chat ---
+  // --- ฟังก์ชัน 1: New Chat (เคลียร์หน้าจอ + สร้าง ID ใหม่) ---
   const handleNewChat = () => {
-    if (messages.length > 1) {
-      const firstUserMessage = messages.find(m => m.sender === 'user');
-      const baseTitle = firstUserMessage ? firstUserMessage.text : "แชทใหม่";
-      
-      // เช็คซ้ำอีกทีตอนกดปุ่ม (เผื่อคนกดรัว)
-      const isSameSession = chatHistory.length > 0 && chatHistory[0].title.startsWith(baseTitle);
-      
-      if (!isSameSession) {
-         const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-         const newHistoryItem = {
-           id: Date.now(),
-           title: `${baseTitle} (${timeString})`,
-           messages: [...messages]
-         };
-         setChatHistory(prev => [newHistoryItem, ...prev]);
-      } else {
-         // ถ้าเหมือนกัน ก็แค่อัปเดตข้อความล่าสุดเข้าไป
-         const updatedHistory = [...chatHistory];
-         updatedHistory[0].messages = [...messages];
-         updatedHistory[0].title = `${baseTitle} (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
-         setChatHistory(updatedHistory);
-      }
-    }
-    
-    // เริ่มหน้าใหม่
-    const newWelcomeMsg = { 
-      ...defaultWelcomeMessage, 
-      text: `สวัสดีครับคุณ ${userName}! 🙏 UP Chat พร้อมบริการครับ\n\n` + defaultWelcomeMessage.text.split('\n').slice(2).join('\n')
-    };
-    
-    setMessages([newWelcomeMsg]);
+    setMessages([defaultWelcomeMessage]); // เคลียร์หน้าจอ
+    setCurrentChatId(Date.now()); // 🔑 สร้าง ID ใหม่ เพื่อเริ่มหัวข้อใหม่
     setIsSidebarOpen(false);
   };
 
+  // --- ฟังก์ชัน 2: ลบประวัติ ---
   const deleteHistoryItem = (e, id) => {
     e.stopPropagation();
     const newHistory = chatHistory.filter(item => item.id !== id);
     setChatHistory(newHistory);
+    
+    // ถ้าลบตัวที่กำลังคุยอยู่ ให้เริ่มใหม่เลย
+    if (id === currentChatId) {
+      handleNewChat();
+    }
   };
 
   const clearAllHistory = () => {
-    if(window.confirm("⚠️ คุณต้องการล้างประวัติการแชททั้งหมดใช่หรือไม่?\n(ข้อมูลในเครื่องจะหายไปด้วย)")) {
+    if(window.confirm("⚠️ คุณต้องการล้างประวัติการแชททั้งหมดใช่หรือไม่?")) {
       setChatHistory([]);
       localStorage.removeItem('upchat_history');
+      handleNewChat(); // ล้างแล้วเริ่มใหม่ด้วย
       setShowSettings(false);
     }
   };
 
+  // --- ฟังก์ชัน 3: โหลดประวัติเก่ามาคุยต่อ ---
   const handleLoadHistory = (historyItem) => {
     setMessages(historyItem.messages);
+    setCurrentChatId(historyItem.id); // 🔑 เปลี่ยน ID กลับไปเป็นของเก่านั้น เพื่อให้คุยต่อได้!
     setIsSidebarOpen(false);
   };
 
@@ -190,7 +174,12 @@ function App() {
         <div className="history-label" style={{padding: '10px 12px', fontSize: '0.75rem', color: '#8e8ea0'}}>History</div>
         <div className="history-list">
           {chatHistory.map((item) => (
-            <div key={item.id} className="history-item" onClick={() => handleLoadHistory(item)}>
+            <div 
+              key={item.id} 
+              className={`history-item ${item.id === currentChatId ? 'active-history' : ''}`} 
+              onClick={() => handleLoadHistory(item)}
+              style={{ backgroundColor: item.id === currentChatId ? '#343541' : '' }} // Highlight ตัวที่เลือก
+            >
               <span className="truncate">💬 {item.title}</span>
               <button className="del-btn" onClick={(e) => deleteHistoryItem(e, item.id)}>🗑️</button>
             </div>
