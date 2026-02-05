@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
+  // 🟢 ฟังก์ชันช่วยแปลงลิงก์
   const formatMessage = (text) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlRegex);
@@ -13,10 +14,10 @@ function App() {
     });
   };
 
-  const [messages, setMessages] = useState([
-    { 
-      id: 1, 
-      text: `สวัสดีครับ 🙏 ยินดีต้อนรับสู่ UP Chat ระบบผู้ช่วยตอบคำถามอัตโนมัติ พร้อมให้บริการครับ!
+  // 📝 ข้อความต้อนรับมาตรฐาน (แยกออกมาเป็นตัวแปร จะได้เรียกใช้ง่ายๆ)
+  const defaultWelcomeMessage = { 
+    id: 1, 
+    text: `สวัสดีครับ 🙏 ยินดีต้อนรับสู่ UP Chat ระบบผู้ช่วยตอบคำถามอัตโนมัติ พร้อมให้บริการครับ!
 
 กรุณาเลือกหัวข้อที่ต้องการทราบ:
 
@@ -26,27 +27,56 @@ function App() {
 
 📅 เรื่องการเรียน 
 3️⃣ พิมพ์ 'ปฏิทิน' (ปฏิทินการศึกษา / วันเปิด-ปิดเทอม)`, 
-      sender: "bot" 
-    }
-  ]);
+    sender: "bot" 
+  };
+
+  // 1. 💾 State: หน้าจอแชทปัจจุบัน (โหลดจาก LocalStorage ถ้าไม่มีให้ใช้ค่าเริ่มต้น)
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem('upchat_current_messages');
+    return savedMessages ? JSON.parse(savedMessages) : [defaultWelcomeMessage];
+  });
   
-  const [chatHistory, setChatHistory] = useState([]);
+  // 2. 💾 State: ประวัติแชท (โหลดจาก LocalStorage)
+  const [chatHistory, setChatHistory] = useState(() => {
+    const savedHistory = localStorage.getItem('upchat_history');
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userName, setUserName] = useState("User");
-  const [showSettings, setShowSettings] = useState(false);
   
-  // 🟢 State สำหรับเปิด/ปิดเมนู
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // 3. 💾 State: ชื่อผู้ใช้ (โหลดจาก LocalStorage)
+  const [userName, setUserName] = useState(() => {
+    return localStorage.getItem('upchat_username') || "User";
+  });
 
+  const [showSettings, setShowSettings] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatEndRef = useRef(null);
 
+  // เลื่อนลงล่างสุดเสมอ
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // 🔥 4. ระบบ Auto-Save: เซฟลงเครื่องทุกครั้งที่มีการเปลี่ยนแปลง
+  useEffect(() => {
+    localStorage.setItem('upchat_current_messages', JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem('upchat_history', JSON.stringify(chatHistory));
+  }, [chatHistory]);
+
+  useEffect(() => {
+    localStorage.setItem('upchat_username', userName);
+  }, [userName]);
+
+
+  // --- ฟังก์ชัน 1: New Chat ---
   const handleNewChat = () => {
     if (messages.length > 1) {
+      // เซฟแชทปัจจุบันลงประวัติก่อน
       const firstUserMessage = messages.find(m => m.sender === 'user');
       const baseTitle = firstUserMessage ? firstUserMessage.text : "แชทใหม่";
       const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -59,41 +89,39 @@ function App() {
       setChatHistory(prev => [newHistoryItem, ...prev]);
     }
     
-    setMessages([{ 
-      id: Date.now(), 
-      text: `สวัสดีครับคุณ ${userName}! 🙏 UP Chat พร้อมบริการครับ
-
-กรุณาเลือกหัวข้อที่ต้องการทราบ:
-
-💰 เรื่องกองทุน (กยศ.) 
-1️⃣ พิมพ์ 'รายใหม่' (ปี 1 / กู้ครั้งแรก) 
-2️⃣ พิมพ์ 'รายเก่า' (กู้ต่อเนื่อง)
-
-📅 เรื่องการเรียน 
-3️⃣ พิมพ์ 'ปฏิทิน' (ปฏิทินการศึกษา / วันเปิด-ปิดเทอม)`, 
-      sender: "bot" 
-    }]);
-
+    // เริ่มหน้าใหม่ (พร้อมใส่ชื่อ User ที่จำไว้)
+    const newWelcomeMsg = { 
+      ...defaultWelcomeMessage, 
+      text: `สวัสดีครับคุณ ${userName}! 🙏 UP Chat พร้อมบริการครับ\n\n` + defaultWelcomeMessage.text.split('\n').slice(2).join('\n')
+    };
+    
+    setMessages([newWelcomeMsg]);
     setIsSidebarOpen(false);
   };
 
+  // --- ฟังก์ชัน 2: ลบประวัติบางอัน ---
   const deleteHistoryItem = (e, id) => {
     e.stopPropagation();
-    setChatHistory(prev => prev.filter(item => item.id !== id));
+    const newHistory = chatHistory.filter(item => item.id !== id);
+    setChatHistory(newHistory);
   };
 
+  // --- ฟังก์ชัน 3: ล้างประวัติทั้งหมด (Reset) ---
   const clearAllHistory = () => {
-    if(window.confirm("คุณต้องการล้างประวัติการแชททั้งหมดใช่หรือไม่?")) {
-      setChatHistory([]);
+    if(window.confirm("⚠️ คุณต้องการล้างประวัติการแชททั้งหมดใช่หรือไม่?\n(ข้อมูลในเครื่องจะหายไปด้วย)")) {
+      setChatHistory([]); // ล้างในจอ
+      localStorage.removeItem('upchat_history'); // ล้างใน Memory เครื่อง
       setShowSettings(false);
     }
   };
 
+  // --- ฟังก์ชัน 4: โหลดประวัติเก่า ---
   const handleLoadHistory = (historyItem) => {
     setMessages(historyItem.messages);
     setIsSidebarOpen(false);
   };
 
+  // --- ฟังก์ชันส่งข้อความ ---
   const handleSend = async () => {
     if (input.trim() === "") return;
     const userMessage = { id: Date.now(), text: input, sender: "user" };
@@ -121,13 +149,11 @@ function App() {
   return (
     <div className="app-container">
       
-      {/* 🟢 ฉากหลังสีดำ (Overlay) */}
       <div 
         className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
         onClick={() => setIsSidebarOpen(false)}
       />
 
-      {/* 🟢 Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
         <div className="history-label" style={{padding: '10px 12px', fontSize: '0.75rem', color: '#8e8ea0'}}>History</div>
@@ -146,7 +172,6 @@ function App() {
 
       <div className="chat-window">
         <div className="chat-header">
-          {/* 🟢 ปุ่มแฮมเบอร์เกอร์ (เช็คตรงนี้ครับว่ามีไหม) */}
           <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>
           <h3>🟣 UP Chat</h3>
         </div>
