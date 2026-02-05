@@ -1,4 +1,4 @@
-/* src/App.css - Version Mobile Sidebar 70% Width */
+/* src/App.css - Final Version (Aligned Header & Mobile Sidebar) */
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
 
 * { box-sizing: border-box; }
@@ -22,12 +22,11 @@ body {
   padding: 10px;
   border-right: 1px solid #4d4d4f;
   flex-shrink: 0;
-  
-  /* ค่าเริ่มต้นสำหรับ Desktop */
+  /* Desktop settings */
   position: relative; 
   transform: none;
   z-index: 20;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animation นุ่มๆ */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .new-chat-btn {
@@ -67,17 +66,38 @@ body {
   background-color: #343541; position: relative; min-width: 0;
 }
 
+/* 🟢 แก้ไข Header ให้จัดกึ่งกลาง */
 .chat-header {
-  padding: 15px; border-bottom: 1px solid #2a2b32;
-  text-align: center; color: #d1d5db; font-weight: 500;
-  display: flex; align-items: center; justify-content: center; position: relative;
-  height: 60px; /* กำหนดความสูง Header ให้แน่นอน */
+  height: 60px; /* ล็อคความสูง */
+  background-color: #343541;
+  border-bottom: 1px solid #2a2b32;
+  color: #d1d5db;
+  
+  /* Flexbox จัดกึ่งกลางทั้งแนวตั้งและแนวนอน */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* เพื่อให้ปุ่มเมนูอ้างอิงตำแหน่งได้ */
+  padding: 0 15px;
 }
 
-/* ปุ่มเมนู (Hamburger) 3 ขีด */
+/* 🟢 สั่งให้ชื่อเว็บไม่มีขอบ จะได้อยู่กลางเป๊ะๆ */
+.chat-header h3 {
+  margin: 0; 
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+/* 🟢 ปุ่มเมนู (Hamburger) 3 ขีด */
 .menu-btn {
   display: none; /* ซ่อนในคอม */
-  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  
+  /* จัดตำแหน่งแบบ Absolute ให้ลอยอยู่ซ้ายสุดและกลางแนวตั้ง */
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  
   background: transparent; border: none; color: white;
   font-size: 1.5rem; cursor: pointer; padding: 0; z-index: 10;
 }
@@ -120,48 +140,29 @@ body {
 
 /* --- 📱 Responsive (ส่วนสำคัญที่แก้ใหม่) --- */
 @media (max-width: 768px) {
-  /* 1. Sidebar ปกติให้ซ่อนไว้ด้านซ้าย (-100%) */
+  /* 1. Sidebar ปกติให้ซ่อนไว้ด้านซ้าย (-100%) กว้าง 70% */
   .sidebar { 
-    position: fixed; 
-    top: 0; left: 0; 
-    height: 100%; 
-    
-    /* ⭐ ตรงนี้คือกำหนดความกว้าง 70% */
-    width: 70%; 
-    max-width: 300px; /* กันไม่ให้กว้างเกินไปถ้าใช้ Tablet */
-    
+    position: fixed; top: 0; left: 0; height: 100%; 
+    width: 70%; max-width: 300px;
     transform: translateX(-100%); 
-    z-index: 100; /* อยู่บนสุด */
-    box-shadow: 5px 0 15px rgba(0,0,0,0.5); /* เพิ่มเงาให้ดูลอยออกมา */
+    z-index: 100; 
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
   }
-
-  /* 2. เมื่อเปิดเมนู (มี class open) ให้เลื่อนกลับมาที่ 0 */
-  .sidebar.open { 
-    transform: translateX(0); 
-  }
+  .sidebar.open { transform: translateX(0); }
   
-  /* 3. ปุ่ม Hamburger ให้โชว์ในมือถือ */
+  /* 2. ปุ่ม Hamburger ให้โชว์ในมือถือ */
   .menu-btn { display: block; }
   
-  /* 4. ฉากหลังมืดๆ (Overlay) */
+  /* 3. ฉากหลังมืดๆ (Overlay) */
   .sidebar-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); /* สีดำจางๆ 60% */
-    z-index: 90; /* อยู่รองลงมาจาก Sidebar */
-    
-    /* เริ่มต้นซ่อนไว้ */
-    opacity: 0;
-    pointer-events: none; /* กันกดโดนตอนซ่อน */
-    transition: opacity 0.3s ease;
+    background: rgba(0,0,0,0.6); z-index: 90;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
   }
-  
-  /* เมื่อเปิดเมนู ให้ Overlay แสดงขึ้นมา */
-  .sidebar-overlay.active { 
-    opacity: 1;
-    pointer-events: auto;
-  }
+  .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
 
   /* ปรับแต่งแชทในมือถือ */
-  .chat-body, .chat-input-area { padding: 15px 10px; }
+  .chat-body { padding: 15px 10px; }
+  .chat-input-area { padding: 15px 10px 20px 10px; }
   .message-bubble { max-width: 90% !important; font-size: 0.95rem; }
 }
