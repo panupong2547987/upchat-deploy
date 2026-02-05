@@ -1,307 +1,167 @@
-/* src/App.css - Final Fixed Version */
+/* src/App.css - Version Mobile Sidebar 70% Width */
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   font-family: 'Kanit', sans-serif;
   background-color: #343541;
   color: white;
-  height: 100vh;
-  width: 100vw;
+  height: 100vh; width: 100vw;
   overflow: hidden;
 }
 
-/* --- คอนเทนเนอร์หลัก --- */
-.app-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-}
+.app-container { display: flex; height: 100vh; width: 100vw; position: relative; }
 
-/* --- 1. Sidebar (แถบประวัติด้านซ้าย) --- */
+/* --- 1. Sidebar (แถบเมนู) --- */
 .sidebar {
   width: 260px;
   background-color: #202123;
-  display: flex;
-  flex-direction: column;
+  display: flex; flex-direction: column;
   padding: 10px;
   border-right: 1px solid #4d4d4f;
-  z-index: 10;
   flex-shrink: 0;
-  transition: transform 0.3s ease-in-out;
+  
+  /* ค่าเริ่มต้นสำหรับ Desktop */
+  position: relative; 
+  transform: none;
+  z-index: 20;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animation นุ่มๆ */
 }
 
 .new-chat-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid #565869;
-  border-radius: 5px;
-  background-color: transparent;
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  border: 1px solid #565869; border-radius: 5px;
+  background-color: transparent; color: white; cursor: pointer;
+  transition: background 0.2s; margin-bottom: 20px; font-size: 0.9rem;
 }
-
 .new-chat-btn:hover { background-color: #2f303d; }
 
 .history-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;
 }
-
-/* ปรับแต่ง Scrollbar ของ Sidebar */
 .history-list::-webkit-scrollbar { width: 5px; }
 .history-list::-webkit-scrollbar-thumb { background: #565869; border-radius: 5px; }
 
 .history-item {
-  padding: 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: #ececf1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background 0.2s;
+  padding: 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;
+  color: #ececf1; display: flex; justify-content: space-between; align-items: center;
 }
-
 .history-item:hover { background-color: #2a2b32; }
 
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
-.del-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  font-size: 0.8rem;
-  color: #8e8ea0;
-}
-
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.del-btn { background: transparent; border: none; cursor: pointer; opacity: 0; font-size: 0.8rem; color: #8e8ea0; }
 .history-item:hover .del-btn { opacity: 1; }
 
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid #4d4d4f;
-}
-
+.sidebar-footer { margin-top: auto; padding-top: 10px; border-top: 1px solid #4d4d4f; }
 .settings-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  border: none;
-  color: #ececf1;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 5px;
+  width: 100%; padding: 12px; background: transparent; border: none;
+  color: #ececf1; text-align: left; cursor: pointer; border-radius: 5px;
 }
-
 .settings-btn:hover { background-color: #2a2b32; }
 
-/* --- 2. Chat Window (พื้นที่แชทด้านขวา) --- */
+/* --- 2. Chat Window --- */
 .chat-window {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background-color: #343541;
-  position: relative;
-  min-width: 0;
+  flex: 1; display: flex; flex-direction: column;
+  background-color: #343541; position: relative; min-width: 0;
 }
 
 .chat-header {
-  padding: 15px;
-  border-bottom: 1px solid #2a2b32;
-  text-align: center;
-  color: #d1d5db;
-  font-weight: 500;
+  padding: 15px; border-bottom: 1px solid #2a2b32;
+  text-align: center; color: #d1d5db; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; position: relative;
+  height: 60px; /* กำหนดความสูง Header ให้แน่นอน */
+}
+
+/* ปุ่มเมนู (Hamburger) 3 ขีด */
+.menu-btn {
+  display: none; /* ซ่อนในคอม */
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; color: white;
+  font-size: 1.5rem; cursor: pointer; padding: 0; z-index: 10;
 }
 
 .chat-body {
-  flex: 1;
-  padding: 20px 15%; /* Desktop: เว้นขอบข้างละ 15% */
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  scroll-behavior: smooth;
+  flex: 1; padding: 20px 15%; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
 }
-
-/* ปรับแต่ง Scrollbar ของ Chat Body */
 .chat-body::-webkit-scrollbar { width: 8px; }
 .chat-body::-webkit-scrollbar-thumb { background: #565869; border-radius: 10px; }
 
 .message-bubble {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  max-width: 85%;
-  width: fit-content;
-  padding: 12px 16px;
-  font-size: 1rem;
-  line-height: 1.6;
+  display: flex; align-items: flex-end; gap: 10px;
+  max-width: 85%; width: fit-content; padding: 12px 16px;
+  font-size: 1rem; line-height: 1.6;
 }
 
-/* ⭐ Class ใหม่: ควบคุมข้อความและลิงก์ไม่ให้ทะลุจอ */
 .message-text {
-  white-space: pre-wrap;      /* เว้นบรรทัดตามที่พิมพ์ */
-  word-break: break-word;     /* ตัดคำยาวๆ */
-  overflow-wrap: anywhere;    /* ตัดลิงก์ยาวๆ เมื่อสุดขอบ */
-  min-width: 0;               /* สำคัญมาก! ช่วยให้ Flexbox ยอมหดตัว */
+  white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; min-width: 0;
 }
+.message-bubble a { color: #19c37d; text-decoration: none; border-bottom: 1px dotted #19c37d; }
+.message-bubble a:hover { text-decoration: underline; border-bottom: none; }
 
-/* ลิ้งก์ในข้อความ (สำหรับปฏิทิน) */
-.message-bubble a {
-  color: #19c37d; /* สีเขียวแบบ ChatGPT */
-  text-decoration: none;
-  border-bottom: 1px dotted #19c37d;
-}
-.message-bubble a:hover {
-  text-decoration: underline;
-  border-bottom: none;
-}
+.bot-msg { align-self: flex-start; background-color: #444654; border-radius: 15px 15px 15px 5px; }
+.user-msg { align-self: flex-end; flex-direction: row-reverse; background-color: #343541; border: 1px solid #565869; border-radius: 15px 15px 5px 15px; }
+.avatar { width: 32px; height: 32px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0; }
 
-.bot-msg {
-  align-self: flex-start;
-  background-color: #444654;
-  border-radius: 15px 15px 15px 5px;
-}
+.chat-input-area { padding: 20px 15% 40px 15%; background: linear-gradient(180deg, rgba(52,53,65,0) 0%, #343541 20%); }
+.input-wrapper { background-color: #40414f; border: 1px solid #565869; border-radius: 12px; display: flex; padding: 5px 10px; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+.input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 12px; font-size: 1rem; outline: none; font-family: 'Kanit', sans-serif; }
+.input-wrapper button { background: transparent; border: none; color: #19c37d; cursor: pointer; font-size: 1.2rem; padding: 0 10px; }
 
-.user-msg {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-  background-color: #343541;
-  border: 1px solid #565869;
-  border-radius: 15px 15px 5px 15px;
-}
+/* Modal Settings */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
+.modal-content { background: #202123; padding: 25px; border-radius: 12px; width: 350px; color: white; border: 1px solid #4d4d4f; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.setting-row { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+.setting-row input { background: #40414f; border: 1px solid #565869; color: white; padding: 8px 10px; border-radius: 4px; outline: none; width: 65%; }
+.danger-btn { background: #d9534f; color: white; border: none; width: 100%; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: 500; }
+.close-btn { background: transparent; color: #8e8ea0; border: none; width: 100%; padding: 10px; cursor: pointer; margin-top: 10px; }
 
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 0.8rem;
-  color: white;
-  flex-shrink: 0;
-}
-
-.chat-input-area {
-  padding: 20px 15% 40px 15%;
-  background: linear-gradient(180deg, rgba(52,53,65,0) 0%, #343541 20%);
-}
-
-.input-wrapper {
-  background-color: #40414f;
-  border: 1px solid #565869;
-  border-radius: 12px;
-  display: flex;
-  padding: 5px 10px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
-}
-
-.input-wrapper input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: white;
-  padding: 12px;
-  font-size: 1rem;
-  outline: none;
-  font-family: 'Kanit', sans-serif;
-}
-
-.input-wrapper button {
-  background: transparent;
-  border: none;
-  color: #19c37d;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 0 10px;
-  transition: color 0.2s;
-}
-
-.input-wrapper button:hover { color: #1cd388; }
-
-/* --- 3. Settings Modal --- */
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000;
-  backdrop-filter: blur(2px);
-}
-
-.modal-content {
-  background: #202123; 
-  padding: 25px; 
-  border-radius: 12px; 
-  width: 350px; 
-  color: white;
-  border: 1px solid #4d4d4f;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.setting-row {
-  display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
-}
-
-.setting-row input {
-  background: #40414f; border: 1px solid #565869; color: white; padding: 8px 10px; border-radius: 4px; outline: none; width: 65%;
-}
-
-.danger-btn {
-  background: #d9534f; color: white; border: none; width: 100%; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: 500; transition: background 0.2s;
-}
-.danger-btn:hover { background: #c9302c; }
-
-.close-btn {
-  background: transparent; color: #8e8ea0; border: none; width: 100%; padding: 10px; cursor: pointer; margin-top: 10px;
-}
-.close-btn:hover { color: white; }
-
-/* --- Responsive (สำหรับมือถือ) --- */
+/* --- 📱 Responsive (ส่วนสำคัญที่แก้ใหม่) --- */
 @media (max-width: 768px) {
-  /* ซ่อน Sidebar เมื่อหน้าจอเล็ก */
+  /* 1. Sidebar ปกติให้ซ่อนไว้ด้านซ้าย (-100%) */
   .sidebar { 
-    position: fixed;
-    height: 100%;
-    transform: translateX(-100%);
+    position: fixed; 
+    top: 0; left: 0; 
+    height: 100%; 
+    
+    /* ⭐ ตรงนี้คือกำหนดความกว้าง 70% */
+    width: 70%; 
+    max-width: 300px; /* กันไม่ให้กว้างเกินไปถ้าใช้ Tablet */
+    
+    transform: translateX(-100%); 
+    z-index: 100; /* อยู่บนสุด */
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5); /* เพิ่มเงาให้ดูลอยออกมา */
+  }
+
+  /* 2. เมื่อเปิดเมนู (มี class open) ให้เลื่อนกลับมาที่ 0 */
+  .sidebar.open { 
+    transform: translateX(0); 
   }
   
-  /* ปรับพื้นที่แชทให้เต็มจอ */
-  .chat-body { 
-    padding: 15px 10px; 
+  /* 3. ปุ่ม Hamburger ให้โชว์ในมือถือ */
+  .menu-btn { display: block; }
+  
+  /* 4. ฉากหลังมืดๆ (Overlay) */
+  .sidebar-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); /* สีดำจางๆ 60% */
+    z-index: 90; /* อยู่รองลงมาจาก Sidebar */
+    
+    /* เริ่มต้นซ่อนไว้ */
+    opacity: 0;
+    pointer-events: none; /* กันกดโดนตอนซ่อน */
+    transition: opacity 0.3s ease;
   }
   
-  .chat-input-area {
-    padding: 15px 10px 20px 10px;
+  /* เมื่อเปิดเมนู ให้ Overlay แสดงขึ้นมา */
+  .sidebar-overlay.active { 
+    opacity: 1;
+    pointer-events: auto;
   }
-  
-  /* แก้ปัญหาข้อความล้นจอในมือถือ */
-  .message-bubble { 
-    max-width: 90% !important; /* บังคับขนาด */
-    font-size: 0.95rem;
-  }
-  
-  .chat-header {
-    font-size: 0.9rem;
-  }
+
+  /* ปรับแต่งแชทในมือถือ */
+  .chat-body, .chat-input-area { padding: 15px 10px; }
+  .message-bubble { max-width: 90% !important; font-size: 0.95rem; }
 }
