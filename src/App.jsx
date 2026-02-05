@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  // 🟢 ฟังก์ชันช่วยแปลงลิงก์
   const formatMessage = (text) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlRegex);
@@ -44,7 +43,6 @@ function App() {
     return localStorage.getItem('upchat_username') || "User";
   });
 
-  // 📸 1. เพิ่ม State เก็บรูปโปรไฟล์ (เก็บเป็น Base64 string)
   const [profileImage, setProfileImage] = useState(() => {
     return localStorage.getItem('upchat_profile_image') || null;
   });
@@ -80,11 +78,6 @@ function App() {
   }, [chatHistory]);
 
   useEffect(() => {
-    localStorage.setItem('upchat_username', userName);
-  }, [userName]);
-
-  // 📸 2. บันทึกรูปลงเครื่องเมื่อมีการเปลี่ยน
-  useEffect(() => {
     if (profileImage) {
       localStorage.setItem('upchat_profile_image', profileImage);
     } else {
@@ -92,13 +85,12 @@ function App() {
     }
   }, [profileImage]);
 
-  // 📸 3. ฟังก์ชันอัปโหลดรูป
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result); // แปลงรูปเป็นข้อความยาวๆ (Base64) แล้วเก็บ
+        setProfileImage(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -171,8 +163,39 @@ function App() {
             </div>
           ))}
         </div>
-        <div className="sidebar-footer">
-          <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙️ Settings</button>
+
+        {/* 🟢 ส่วน Footer: เพิ่มลูกเล่น Hover ตรงนี้ */}
+        <div 
+          className="sidebar-footer"
+          // เฉพาะในคอม: เมาส์ชี้ = เปิด, เมาส์ออก = ปิด
+          onMouseEnter={() => window.innerWidth > 768 && setShowSettings(true)}
+          onMouseLeave={() => window.innerWidth > 768 && setShowSettings(false)}
+        >
+          {/* เมนู Pop-up */}
+          <div className={`settings-popup ${showSettings ? 'show' : ''}`}>
+            
+            <label className="menu-item" htmlFor="footer-file-upload">
+              <div className="menu-avatar">
+                {profileImage ? <img src={profileImage} alt="Me" /> : userName[0]?.toUpperCase()}
+              </div>
+              <span>Change Avatar</span>
+              <input id="footer-file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{display: 'none'}} />
+            </label>
+
+            <div className="menu-divider"></div>
+
+            <button className="menu-item danger" onClick={clearAllHistory}>
+              🗑️ Clear History
+            </button>
+          </div>
+
+          {/* ปุ่ม Settings (ยังกดคลิกได้ปกติ สำหรับมือถือ) */}
+          <button 
+            className={`settings-btn ${showSettings ? 'active' : ''}`} 
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            ⚙️ Settings
+          </button>
         </div>
       </div>
 
@@ -184,7 +207,6 @@ function App() {
         <div className="chat-body">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"}`}>
-              {/* 📸 4. ส่วนแสดง Avatar (ถ้ารูปมี ให้โชว์รูป ถ้าไม่มี ให้โชว์ตัวอักษร) */}
               <div className="avatar" style={{ backgroundColor: msg.sender === 'user' ? (profileImage ? 'transparent' : '#7b2cbf') : '#19c37d' }}>
                 {msg.sender === 'user' && profileImage ? (
                   <img src={profileImage} alt="User" className="avatar-img" />
@@ -210,44 +232,6 @@ function App() {
           </div>
         </div>
       </div>
-
-      {/* 📸 5. Settings Modal แบบใหม่ (Slide Up) */}
-      {showSettings && (
-        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
-          <div className="modal-content bottom-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>⚙️ การตั้งค่า</h2>
-              <button className="close-text-btn" onClick={() => setShowSettings(false)}>เสร็จสิ้น</button>
-            </div>
-            
-            <div className="setting-body">
-              {/* ส่วนอัปโหลดรูป */}
-              <div className="profile-upload-section">
-                <div className="profile-preview">
-                  {profileImage ? (
-                    <img src={profileImage} alt="Profile" />
-                  ) : (
-                    <div className="profile-placeholder">{userName[0]?.toUpperCase()}</div>
-                  )}
-                  {/* ปุ่มกล้องเล็กๆ */}
-                  <label htmlFor="file-upload" className="camera-icon">📷</label>
-                  <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{display: 'none'}} />
-                </div>
-                <p className="profile-hint">แตะที่รูปเพื่อแก้ไข</p>
-              </div>
-
-              <div className="setting-section">
-                <label>ชื่อผู้ใช้งาน</label>
-                <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="ชื่อของคุณ..." />
-              </div>
-
-              <div className="setting-section danger-zone">
-                <button className="danger-btn" onClick={clearAllHistory}>🗑️ ล้างประวัติแชททั้งหมด</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
