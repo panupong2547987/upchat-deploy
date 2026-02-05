@@ -111,7 +111,7 @@ function App() {
   };
 
   return (
-    <div className="app-container"> {/* ลบ class isDarkMode ออกเพื่อให้ใช้ CSS หลักอันเดียว */}
+    <div className="app-container">
       
       {/* --- Sidebar (ประวัติการแชท) --- */}
       <div className="sidebar">

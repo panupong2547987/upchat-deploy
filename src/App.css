@@ -1,4 +1,4 @@
-/* src/App.css - Updated Version */
+/* src/App.css - Final Fixed Version */
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
 
 * {
@@ -157,10 +157,14 @@ body {
   padding: 12px 16px;
   font-size: 1rem;
   line-height: 1.6;
-  
-  /* ⭐ สำคัญ: ช่วยให้เว้นบรรทัดตาม Dialogflow */
-  white-space: pre-wrap; 
-  word-wrap: break-word;
+}
+
+/* ⭐ Class ใหม่: ควบคุมข้อความและลิงก์ไม่ให้ทะลุจอ */
+.message-text {
+  white-space: pre-wrap;      /* เว้นบรรทัดตามที่พิมพ์ */
+  word-break: break-word;     /* ตัดคำยาวๆ */
+  overflow-wrap: anywhere;    /* ตัดลิงก์ยาวๆ เมื่อสุดขอบ */
+  min-width: 0;               /* สำคัญมาก! ช่วยให้ Flexbox ยอมหดตัว */
 }
 
 /* ลิ้งก์ในข้อความ (สำหรับปฏิทิน) */
@@ -183,8 +187,8 @@ body {
 .user-msg {
   align-self: flex-end;
   flex-direction: row-reverse;
-  background-color: #343541; /* ทำให้กลมกลืนหรือเปลี่ยนสีได้ */
-  border: 1px solid #565869; /* เพิ่มขอบให้ดูมีมิติ */
+  background-color: #343541;
+  border: 1px solid #565869;
   border-radius: 15px 15px 5px 15px;
 }
 
@@ -279,7 +283,7 @@ body {
   .sidebar { 
     position: fixed;
     height: 100%;
-    transform: translateX(-100%); /* เลื่อนเก็บไปทางซ้าย */
+    transform: translateX(-100%);
   }
   
   /* ปรับพื้นที่แชทให้เต็มจอ */
@@ -291,8 +295,9 @@ body {
     padding: 15px 10px 20px 10px;
   }
   
+  /* แก้ปัญหาข้อความล้นจอในมือถือ */
   .message-bubble { 
-    max-width: 90%; 
+    max-width: 90% !important; /* บังคับขนาด */
     font-size: 0.95rem;
   }
   
