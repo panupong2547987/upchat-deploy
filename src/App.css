@@ -1,4 +1,4 @@
-/* src/App.css - Bottom Sheet Settings + Image Upload */
+/* src/App.css - Gemini Style Settings Menu */
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
 
 * { box-sizing: border-box; }
@@ -26,15 +26,82 @@ body {
   color: white; cursor: pointer; transition: background 0.2s; margin-bottom: 20px;
 }
 .new-chat-btn:hover { background-color: #2f303d; }
+
 .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
 .history-item { padding: 12px; border-radius: 5px; cursor: pointer; color: #ececf1; display: flex; justify-content: space-between; }
 .history-item:hover, .active-history { background-color: #2a2b32; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .del-btn { background: transparent; border: none; cursor: pointer; opacity: 0; color: #8e8ea0; }
 .history-item:hover .del-btn { opacity: 1; }
-.sidebar-footer { margin-top: auto; padding-top: 10px; border-top: 1px solid #4d4d4f; }
-.settings-btn { width: 100%; padding: 12px; background: transparent; border: none; color: #ececf1; text-align: left; cursor: pointer; border-radius: 5px; }
-.settings-btn:hover { background-color: #2a2b32; }
+
+/* --- 🟢 Footer & Settings Menu (ส่วนสำคัญที่ต้องแก้) --- */
+.sidebar-footer { 
+  margin-top: auto; 
+  padding-top: 10px; 
+  border-top: 1px solid #4d4d4f; 
+  position: relative; /* สำคัญ! เมนูจะอ้างอิงจากตรงนี้ */
+}
+
+/* ปุ่ม Settings หลัก */
+.settings-btn { 
+  width: 100%; padding: 12px; background: transparent; border: none; 
+  color: #ececf1; text-align: left; cursor: pointer; border-radius: 5px; 
+  display: flex; align-items: center; gap: 10px; font-weight: 500;
+  transition: background 0.2s;
+}
+.settings-btn:hover, .settings-btn.active { background-color: #2a2b32; color: white; }
+
+/* เมนู Pop-up ที่เด้งขึ้นมา */
+.settings-popup {
+  position: absolute;
+  bottom: 100%; /* ดันขึ้นไปอยู่เหนือ Footer */
+  left: 0;
+  width: 100%;
+  background-color: #2f303d; /* สีพื้นหลังเมนู */
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom: 10px; /* เว้นระยะห่างจากปุ่ม */
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* เงาฟุ้งๆ */
+  border: 1px solid #40414f;
+  
+  /* Animation ตอนโผล่ */
+  opacity: 0; transform: translateY(10px) scale(0.95);
+  visibility: hidden; pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+}
+
+/* คลาสสำหรับแสดงเมนู */
+.settings-popup.show {
+  opacity: 1; transform: translateY(0) scale(1);
+  visibility: visible; pointer-events: auto;
+}
+
+/* รายการในเมนู */
+.menu-item {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 10px 12px;
+  border-radius: 8px; cursor: pointer;
+  color: #ececf1; font-size: 0.9rem;
+  background: transparent; border: none; text-align: left;
+  transition: background 0.2s;
+}
+.menu-item:hover { background-color: #40414f; color: white; }
+
+/* เส้นคั่นบางๆ */
+.menu-divider { height: 1px; background-color: #40414f; margin: 5px 0; }
+
+/* สีแดงสำหรับปุ่มลบ */
+.menu-item.danger { color: #ff6b6b; }
+.menu-item.danger:hover { background-color: rgba(255, 107, 107, 0.1); }
+
+/* รูปโปรไฟล์เล็กๆ ในเมนู */
+.menu-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #7b2cbf; display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: bold; overflow: hidden; object-fit: cover;
+}
+.menu-avatar img { width: 100%; height: 100%; }
 
 /* --- Chat Window --- */
 .chat-window { flex: 1; display: flex; flex-direction: column; background-color: #343541; position: relative; min-width: 0; }
@@ -54,9 +121,9 @@ body {
 .bot-msg { align-self: flex-start; background-color: #444654; border-radius: 15px 15px 15px 5px; }
 .user-msg { align-self: flex-end; flex-direction: row-reverse; background-color: #343541; border: 1px solid #565869; border-radius: 15px 15px 5px 15px; }
 
-/* 📸 Avatar Styling */
+/* Avatar ในแชท */
 .avatar {
-  width: 32px; height: 32px; border-radius: 50%; /* กลมดิ๊ก */
+  width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-weight: bold; color: white; flex-shrink: 0; overflow: hidden;
 }
@@ -66,71 +133,6 @@ body {
 .input-wrapper { background-color: #40414f; border: 1px solid #565869; border-radius: 12px; display: flex; padding: 5px 10px; }
 .input-wrapper input { flex: 1; background: transparent; border: none; color: white; padding: 12px; font-size: 1rem; outline: none; }
 .input-wrapper button { background: transparent; border: none; color: #19c37d; cursor: pointer; font-size: 1.2rem; padding: 0 10px; }
-
-/* --- 🟢 New Settings Modal (Bottom Sheet Style) --- */
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6); display: flex; 
-  /* จัดให้อยู่ด้านล่าง */
-  align-items: flex-end; justify-content: center;
-  z-index: 2000; backdrop-filter: blur(2px); animation: fadeIn 0.2s ease;
-}
-
-.modal-content.bottom-sheet {
-  background: #202123; width: 100%; max-width: 600px; /* จำกัดความกว้างในคอม */
-  border-radius: 20px 20px 0 0; /* มนเฉพาะด้านบน */
-  padding: 25px; color: white; border-top: 1px solid #4d4d4f;
-  box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
-  animation: slideUpBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  /* ให้สูงพอประมาณ */
-  max-height: 85vh; overflow-y: auto;
-}
-
-.modal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 25px;
-}
-.modal-header h2 { margin: 0; font-size: 1.3rem; }
-.close-text-btn { background: none; border: none; color: #19c37d; font-size: 1rem; font-weight: bold; cursor: pointer; }
-
-/* 📸 Profile Upload Section */
-.profile-upload-section {
-  display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;
-}
-.profile-preview {
-  width: 100px; height: 100px; border-radius: 50%;
-  position: relative; margin-bottom: 10px;
-  border: 2px solid #565869; overflow: hidden;
-}
-.profile-preview img { width: 100%; height: 100%; object-fit: cover; }
-.profile-placeholder {
-  width: 100%; height: 100%; background: #7b2cbf;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2.5rem; font-weight: bold; color: white;
-}
-.camera-icon {
-  position: absolute; bottom: 0; right: 0;
-  background: #343541; border-radius: 50%; padding: 5px;
-  cursor: pointer; border: 1px solid #565869; font-size: 1.2rem;
-}
-.profile-hint { font-size: 0.85rem; color: #8e8ea0; margin: 0; }
-
-.setting-section { margin-bottom: 20px; }
-.setting-section label { display: block; font-size: 0.9rem; color: #ececf1; margin-bottom: 8px; font-weight: 500; }
-.setting-section input {
-  width: 100%; background: #40414f; border: 1px solid #565869;
-  color: white; padding: 12px; border-radius: 8px; outline: none; font-size: 1rem;
-}
-
-.danger-zone { border-top: 1px solid #4d4d4f; padding-top: 20px; margin-top: 30px; }
-.danger-btn {
-  background: #d9534f; color: white; border: none; width: 100%;
-  padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 1rem;
-}
-
-/* Animations */
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUpBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
@@ -142,7 +144,4 @@ body {
   .chat-body { padding: 15px 10px; }
   .chat-input-area { padding: 15px 10px 20px 10px; }
   .message-bubble { max-width: 90% !important; font-size: 0.95rem; }
-  
-  /* ปรับ Modal ให้เต็มความกว้างในมือถือ */
-  .modal-content.bottom-sheet { width: 100vw; max-width: none; border-radius: 20px 20px 0 0; padding-bottom: 40px; }
 }
