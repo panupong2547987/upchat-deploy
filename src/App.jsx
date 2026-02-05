@@ -2,35 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  // 🟢 ฟังก์ชันแปลงข้อความให้เป็นลิงก์ (Helper Function)
   const formatMessage = (text) => {
-    // สูตร Regex สำหรับหาลิงก์ (ขึ้นต้นด้วย http/https)
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    
-    // แยกข้อความออกจากกันด้วยลิงก์
     const parts = text.split(urlRegex);
-    
     return parts.map((part, index) => {
-      // ถ้าส่วนนี้ตรงกับสูตรลิงก์ ให้ห่อด้วย <a>
       if (part.match(urlRegex)) {
-        return (
-          <a 
-            key={index} 
-            href={part} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={{ color: '#19c37d', textDecoration: 'underline' }}
-          >
-            {part}
-          </a>
-        );
+        return <a key={index} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#19c37d', textDecoration: 'underline' }}>{part}</a>;
       }
-      // ถ้าไม่ใช่ลิงก์ ก็แสดงข้อความปกติ
       return part;
     });
   };
 
-  // 1. state สำหรับหน้าจอแชทปัจจุบัน (แก้ข้อความต้อนรับตรงนี้)
   const [messages, setMessages] = useState([
     { 
       id: 1, 
@@ -48,20 +30,21 @@ function App() {
     }
   ]);
   
-  // 2. state สำหรับเก็บประวัติและข้อมูลผู้ใช้
   const [chatHistory, setChatHistory] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userName, setUserName] = useState("User"); // สำหรับตั้งชื่อผู้ใช้
-  const [showSettings, setShowSettings] = useState(false); // สำหรับเปิด/ปิดหน้า Setting
+  const [userName, setUserName] = useState("User");
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // 🟢 State สำหรับเปิด/ปิดเมนู
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const chatEndRef = useRef(null);
 
-  // เลื่อนหน้าจอลงล่างสุดอัตโนมัติเมื่อมีข้อความใหม่
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // --- ฟังก์ชัน 1: New Chat (เริ่มใหม่และบันทึกประวัติ) ---
   const handleNewChat = () => {
     if (messages.length > 1) {
       const firstUserMessage = messages.find(m => m.sender === 'user');
@@ -76,7 +59,6 @@ function App() {
       setChatHistory(prev => [newHistoryItem, ...prev]);
     }
     
-    // ล้างหน้าจอ พร้อมทักทาย (แก้ให้แสดงเมนูเหมือนกัน)
     setMessages([{ 
       id: Date.now(), 
       text: `สวัสดีครับคุณ ${userName}! 🙏 UP Chat พร้อมบริการครับ
@@ -91,15 +73,15 @@ function App() {
 3️⃣ พิมพ์ 'ปฏิทิน' (ปฏิทินการศึกษา / วันเปิด-ปิดเทอม)`, 
       sender: "bot" 
     }]);
+
+    setIsSidebarOpen(false);
   };
 
-  // --- ฟังก์ชัน 2: ลบประวัติเฉพาะอัน ---
   const deleteHistoryItem = (e, id) => {
-    e.stopPropagation(); // กันไม่ให้ไปกดโดนฟังก์ชันโหลดแชท
+    e.stopPropagation();
     setChatHistory(prev => prev.filter(item => item.id !== id));
   };
 
-  // --- ฟังก์ชัน 3: ล้างประวัติทั้งหมด ---
   const clearAllHistory = () => {
     if(window.confirm("คุณต้องการล้างประวัติการแชททั้งหมดใช่หรือไม่?")) {
       setChatHistory([]);
@@ -107,12 +89,11 @@ function App() {
     }
   };
 
-  // --- ฟังก์ชัน 4: โหลดประวัติเก่ามาแสดง ---
   const handleLoadHistory = (historyItem) => {
     setMessages(historyItem.messages);
+    setIsSidebarOpen(false);
   };
 
-  // --- ฟังก์ชันส่งข้อความไปหา Backend ---
   const handleSend = async () => {
     if (input.trim() === "") return;
     const userMessage = { id: Date.now(), text: input, sender: "user" };
@@ -140,8 +121,14 @@ function App() {
   return (
     <div className="app-container">
       
-      {/* --- Sidebar (ประวัติการแชท) --- */}
-      <div className="sidebar">
+      {/* 🟢 ฉากหลังสีดำ (Overlay) */}
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+        onClick={() => setIsSidebarOpen(false)}
+      />
+
+      {/* 🟢 Sidebar */}
+      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
         <div className="history-label" style={{padding: '10px 12px', fontSize: '0.75rem', color: '#8e8ea0'}}>History</div>
         <div className="history-list">
@@ -157,9 +144,12 @@ function App() {
         </div>
       </div>
 
-      {/* --- Chat Window (หน้าต่างแชท) --- */}
       <div className="chat-window">
-        <div className="chat-header"><h3>🟣 UP Chat</h3></div>
+        <div className="chat-header">
+          {/* 🟢 ปุ่มแฮมเบอร์เกอร์ (เช็คตรงนี้ครับว่ามีไหม) */}
+          <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>
+          <h3>🟣 UP Chat</h3>
+        </div>
         <div className="chat-body">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"}`}>
@@ -167,7 +157,6 @@ function App() {
                 {msg.sender === 'user' ? userName[0].toUpperCase() : 'AI'}
               </div>
               <div className="message-text">
-                {/* 👇 ใช้ฟังก์ชัน formatMessage แปลงข้อความให้เป็นลิงก์ */}
                 {formatMessage(msg.text)}
               </div>
             </div>
@@ -194,7 +183,6 @@ function App() {
         </div>
       </div>
 
-      {/* --- Settings Modal (หน้าต่างตั้งค่า) --- */}
       {showSettings && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -203,7 +191,6 @@ function App() {
               <label>User Name:</label>
               <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} />
             </div>
-            {/* ลบปุ่มสลับ Dark Mode ออกตามความต้องการ */}
             <div className="setting-row">
               <button className="danger-btn" onClick={clearAllHistory}>🗑️ Clear All History</button>
             </div>
