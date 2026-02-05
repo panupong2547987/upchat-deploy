@@ -29,30 +29,27 @@ function App() {
   };
 
   const [currentChatId, setCurrentChatId] = useState(Date.now());
-
-  const [chatHistory, setChatHistory] = useState(() => {
-    const savedHistory = localStorage.getItem('upchat_history');
-    return savedHistory ? JSON.parse(savedHistory) : [];
-  });
-
   const [messages, setMessages] = useState([defaultWelcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  const [userName, setUserName] = useState(() => {
-    return localStorage.getItem('upchat_username') || "User";
-  });
-
-  const [profileImage, setProfileImage] = useState(() => {
-    return localStorage.getItem('upchat_profile_image') || null;
-  });
-
+  // Settings & Sidebar
   const [showSettings, setShowSettings] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatEndRef = useRef(null);
-  
-  // ⏳ ตัวแปรสำหรับเก็บ Timer การปิดเมนู
   const closeMenuTimer = useRef(null);
+
+  // 🟢 State สำหรับจำว่าข้อความไหนถูกกด (สำหรับมือถือ)
+  const [activeMessageId, setActiveMessageId] = useState(null);
+
+  // User Data
+  const [userName, setUserName] = useState(() => localStorage.getItem('upchat_username') || "User");
+  const [profileImage, setProfileImage] = useState(() => localStorage.getItem('upchat_profile_image') || null);
+  
+  const [chatHistory, setChatHistory] = useState(() => {
+    const saved = localStorage.getItem('upchat_history');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,41 +57,29 @@ function App() {
 
   useEffect(() => {
     if (messages.length <= 1) return;
-    setChatHistory(prevHistory => {
-      const existingIndex = prevHistory.findIndex(item => item.id === currentChatId);
-      if (existingIndex > -1) {
-        const updatedHistory = [...prevHistory];
-        updatedHistory[existingIndex] = { ...updatedHistory[existingIndex], messages: messages };
-        return updatedHistory;
+    setChatHistory(prev => {
+      const idx = prev.findIndex(item => item.id === currentChatId);
+      if (idx > -1) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], messages: messages };
+        return updated;
       } else {
-        const firstUserMessage = messages.find(m => m.sender === 'user');
-        const title = firstUserMessage ? firstUserMessage.text : "New Chat";
-        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const newItem = { id: currentChatId, title: `${title} (${timeString})`, messages: messages };
-        return [newItem, ...prevHistory];
+        const firstUserMsg = messages.find(m => m.sender === 'user');
+        const title = firstUserMsg ? firstUserMsg.text : "New Chat";
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return [{ id: currentChatId, title: `${title} (${time})`, messages }, ...prev];
       }
     });
   }, [messages, currentChatId]);
 
-  useEffect(() => {
-    localStorage.setItem('upchat_history', JSON.stringify(chatHistory));
-  }, [chatHistory]);
-
-  useEffect(() => {
-    if (profileImage) {
-      localStorage.setItem('upchat_profile_image', profileImage);
-    } else {
-      localStorage.removeItem('upchat_profile_image');
-    }
-  }, [profileImage]);
+  useEffect(() => { localStorage.setItem('upchat_history', JSON.stringify(chatHistory)); }, [chatHistory]);
+  useEffect(() => { if (profileImage) localStorage.setItem('upchat_profile_image', profileImage); }, [profileImage]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
+      reader.onloadend = () => setProfileImage(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -103,7 +88,8 @@ function App() {
     setMessages([defaultWelcomeMessage]);
     setCurrentChatId(Date.now());
     setIsSidebarOpen(false);
-    setShowSettings(false); // ปิดเมนูเมื่อเริ่มแชทใหม่
+    setShowSettings(false);
+    setActiveMessageId(null);
   };
 
   const deleteHistoryItem = (e, id) => {
@@ -122,10 +108,45 @@ function App() {
     }
   };
 
-  const handleLoadHistory = (historyItem) => {
-    setMessages(historyItem.messages);
-    setCurrentChatId(historyItem.id);
+  const handleLoadHistory = (item) => {
+    setMessages(item.messages);
+    setCurrentChatId(item.id);
     setIsSidebarOpen(false);
+  };
+
+  const handleExportPDF = () => {
+    setShowSettings(false);
+    setTimeout(() => window.print(), 300);
+  };
+
+  const handleEditMessage = (e, id, text) => {
+    e.stopPropagation(); // ป้องกันไม่ให้ไป trigger การกดที่ bubble
+    setInput(text);
+    setActiveMessageId(null); // ปิดเมนู
+    setMessages(prev => {
+      const index = prev.findIndex(m => m.id === id);
+      if (index !== -1) {
+        const newMsgs = [...prev];
+        const nextMsg = newMsgs[index + 1];
+        newMsgs.splice(index, (nextMsg && nextMsg.sender === 'bot') ? 2 : 1);
+        return newMsgs;
+      }
+      return prev;
+    });
+    document.querySelector('.input-wrapper input')?.focus();
+  };
+
+  const handleCopyMessage = (e, text) => {
+    e.stopPropagation(); // ป้องกันไม่ให้ไป trigger การกดที่ bubble
+    navigator.clipboard.writeText(text);
+    setActiveMessageId(null); // ปิดเมนูหลังจากก๊อปเสร็จ
+    alert("คัดลอกเรียบร้อย! ✅");
+  };
+
+  // 🟢 ฟังก์ชันเมื่อกดที่ข้อความ (Toggle เมนู)
+  const handleMessageClick = (id) => {
+    // ถ้ากดตัวเดิมให้ปิด ถ้ากดตัวใหม่ให้เปิด
+    setActiveMessageId(prev => prev === id ? null : id);
   };
 
   const handleSend = async () => {
@@ -135,6 +156,7 @@ function App() {
     const userInput = input;
     setInput("");
     setIsLoading(true);
+    setActiveMessageId(null); // ปิดเมนูค้างเก่า (ถ้ามี)
 
     try {
       const response = await fetch('https://upchat-bn.onrender.com/chat', {
@@ -152,60 +174,29 @@ function App() {
     }
   };
 
-  // 🟢 ฟังก์ชันควบคุมการเปิดเมนู (เมาส์ชี้)
-  const handleMouseEnter = () => {
-    if (window.innerWidth > 768) {
-      // ยกเลิกคำสั่งปิด (ถ้ามี) เพราะเมาส์กลับเข้ามาแล้ว!
-      if (closeMenuTimer.current) {
-        clearTimeout(closeMenuTimer.current);
-        closeMenuTimer.current = null;
-      }
-      setShowSettings(true);
-    }
-  };
-
-  // 🟢 ฟังก์ชันควบคุมการปิดเมนู (เมาส์ออก) - แบบหน่วงเวลา
-  const handleMouseLeave = () => {
-    if (window.innerWidth > 768) {
-      // อย่าเพิ่งปิด! รอ 300ms เผื่อคนเลื่อนเมาส์กลับมาทัน
-      closeMenuTimer.current = setTimeout(() => {
-        setShowSettings(false);
-      }, 300); 
-    }
-  };
-
-  // 🟢 ฟังก์ชันกดปุ่ม (Toggle)
-  const toggleSettings = () => {
-    // ถ้ากดปุ่ม ให้ยกเลิก Timer แล้วสลับสถานะเลย
-    if (closeMenuTimer.current) clearTimeout(closeMenuTimer.current);
-    setShowSettings(!showSettings);
-  };
-
   return (
-    <div className="app-container">
-      <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
+    <div className="app-container" onClick={() => setActiveMessageId(null)}> 
+      {/* 👆 ใส่ onClick ที่ container เพื่อให้แตะที่ว่างแล้วเมนูหุบลง */}
+      
+      <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(false); }} />
 
-      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
         <div className="history-label" style={{padding: '10px 12px', fontSize: '0.75rem', color: '#8e8ea0'}}>History</div>
         <div className="history-list">
           {chatHistory.map((item) => (
-            <div key={item.id} className={`history-item ${item.id === currentChatId ? 'active-history' : ''}`} onClick={() => handleLoadHistory(item)} style={{ backgroundColor: item.id === currentChatId ? '#343541' : '' }}>
+            <div key={item.id} className={`history-item ${item.id === currentChatId ? 'active-history' : ''}`} onClick={() => handleLoadHistory(item)}>
               <span className="truncate">💬 {item.title}</span>
               <button className="del-btn" onClick={(e) => deleteHistoryItem(e, item.id)}>🗑️</button>
             </div>
           ))}
         </div>
 
-        {/* 🟢 Footer แบบใหม่: ใช้ระบบ Timer แทน CSS Hover ธรรมดา */}
-        <div 
-          className="sidebar-footer"
-          onMouseEnter={handleMouseEnter} 
-          onMouseLeave={handleMouseLeave}
+        <div className="sidebar-footer" 
+             onMouseEnter={() => window.innerWidth > 768 && setShowSettings(true)} 
+             onMouseLeave={() => { if(window.innerWidth > 768) closeMenuTimer.current = setTimeout(() => setShowSettings(false), 300); }}
         >
-          {/* เมนู Pop-up */}
-          <div className={`settings-popup ${showSettings ? 'show' : ''}`}>
-            
+          <div className={`settings-popup ${showSettings ? 'show' : ''}`} onMouseEnter={() => clearTimeout(closeMenuTimer.current)}>
             <label className="menu-item" htmlFor="footer-file-upload">
               <div className="menu-avatar">
                 {profileImage ? <img src={profileImage} alt="Me" /> : userName[0]?.toUpperCase()}
@@ -213,40 +204,44 @@ function App() {
               <span>Change Avatar</span>
               <input id="footer-file-upload" type="file" accept="image/*" onChange={handleImageUpload} style={{display: 'none'}} />
             </label>
-
+            
             <div className="menu-divider"></div>
-
-            <button className="menu-item danger" onClick={clearAllHistory}>
-              🗑️ Clear History
-            </button>
+            <button className="menu-item" onClick={handleExportPDF}>📄 Save as PDF</button>
+            <div className="menu-divider"></div>
+            <button className="menu-item danger" onClick={clearAllHistory}>🗑️ Clear History</button>
           </div>
-
-          {/* ปุ่ม Settings (กดแล้วค้างแน่นอน) */}
-          <button 
-            className={`settings-btn ${showSettings ? 'active' : ''}`} 
-            onClick={toggleSettings}
-          >
-            ⚙️ Settings
-          </button>
+          
+          <button className={`settings-btn ${showSettings ? 'active' : ''}`} onClick={() => setShowSettings(!showSettings)}>⚙️ Settings</button>
         </div>
       </div>
 
       <div className="chat-window">
-        <div className="chat-header">
+        <div className="chat-header" onClick={(e) => e.stopPropagation()}>
           <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>
           <h3>🟣 UP Chat</h3>
         </div>
         <div className="chat-body">
           {messages.map((msg) => (
-            <div key={msg.id} className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"}`}>
+            <div 
+              key={msg.id} 
+              className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"} ${activeMessageId === msg.id ? 'active' : ''}`}
+              onClick={(e) => { e.stopPropagation(); handleMessageClick(msg.id); }} // กดแล้ว Toggle เมนู
+            >
               <div className="avatar" style={{ backgroundColor: msg.sender === 'user' ? (profileImage ? 'transparent' : '#7b2cbf') : '#19c37d' }}>
-                {msg.sender === 'user' && profileImage ? (
-                  <img src={profileImage} alt="User" className="avatar-img" />
-                ) : (
-                  msg.sender === 'user' ? userName[0].toUpperCase() : 'AI'
-                )}
+                {msg.sender === 'user' && profileImage ? <img src={profileImage} alt="User" className="avatar-img" /> : (msg.sender === 'user' ? userName[0].toUpperCase() : 'AI')}
               </div>
-              <div className="message-text">{formatMessage(msg.text)}</div>
+              
+              <div className="message-text">
+                {formatMessage(msg.text)}
+                
+                {/* 🟢 Action Buttons */}
+                <div className="message-actions">
+                  <button className="action-btn" onClick={(e) => handleCopyMessage(e, msg.text)} title="คัดลอก">📋</button>
+                  {msg.sender === 'user' && (
+                    <button className="action-btn" onClick={(e) => handleEditMessage(e, msg.id, msg.text)} title="แก้ไข">✏️</button>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
           {isLoading && (
@@ -257,7 +252,7 @@ function App() {
           )}
           <div ref={chatEndRef} />
         </div>
-        <div className="chat-input-area">
+        <div className="chat-input-area" onClick={(e) => e.stopPropagation()}>
           <div className="input-wrapper">
             <input type="text" placeholder="ถามมาได้เลยครับ..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
             <button onClick={handleSend}>➤</button>
