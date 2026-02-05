@@ -38,8 +38,6 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatEndRef = useRef(null);
   const closeMenuTimer = useRef(null);
-
-  // 🛑 Ref สำหรับสั่งหยุดบอท (AbortController)
   const abortControllerRef = useRef(null);
 
   const [activeMessageId, setActiveMessageId] = useState(null);
@@ -87,7 +85,6 @@ function App() {
   const handleNewChat = () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     setIsLoading(false);
-
     setMessages([defaultWelcomeMessage]);
     setCurrentChatId(Date.now());
     setIsSidebarOpen(false);
@@ -148,11 +145,8 @@ function App() {
     alert("คัดลอกเรียบร้อย! ✅");
   };
 
-  // 🟢 ฟังก์ชันนี้สำคัญที่สุด: กันนิ้วทะลุ
   const handleMessageClick = (id) => {
-    // ถ้า Sidebar เปิดอยู่ ให้หยุดทำงานทันที (ห้ามเปิดเมนู Copy)
     if (isSidebarOpen) return; 
-
     setActiveMessageId(prev => prev === id ? null : id);
   };
 
@@ -194,7 +188,15 @@ function App() {
   return (
     <div className="app-container" onClick={() => setActiveMessageId(null)}> 
       
-      <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(false); }} />
+      {/* 🟢 แก้ตรงนี้ครับ: กด Overlay -> ปิด Sidebar -> และปิด Settings ด้วย! */}
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} 
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          setIsSidebarOpen(false); 
+          setShowSettings(false); // 👈 เพิ่มบรรทัดนี้ครับ สั่งปิด Settings
+        }} 
+      />
 
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
