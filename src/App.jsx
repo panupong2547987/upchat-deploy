@@ -2,9 +2,37 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
+  // 🟢 ฟังก์ชันแปลงข้อความให้เป็นลิงก์ (Helper Function)
+  const formatMessage = (text) => {
+    // สูตร Regex สำหรับหาลิงก์ (ขึ้นต้นด้วย http/https)
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
+    // แยกข้อความออกจากกันด้วยลิงก์
+    const parts = text.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      // ถ้าส่วนนี้ตรงกับสูตรลิงก์ ให้ห่อด้วย <a>
+      if (part.match(urlRegex)) {
+        return (
+          <a 
+            key={index} 
+            href={part} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ color: '#19c37d', textDecoration: 'underline' }}
+          >
+            {part}
+          </a>
+        );
+      }
+      // ถ้าไม่ใช่ลิงก์ ก็แสดงข้อความปกติ
+      return part;
+    });
+  };
+
   // 1. state สำหรับหน้าจอแชทปัจจุบัน
   const [messages, setMessages] = useState([
-    { id: 1, text: "สวัสดีค่ะ! UP Chat พร้อมคุยค่ะ มีอะไรให้ช่วยไหม?", sender: "bot" }
+    { id: 1, text: "สวัสดีครับ! UP Chat พร้อมคุยครับ มีอะไรให้ช่วยไหม?", sender: "bot" }
   ]);
   
   // 2. state สำหรับเก็บประวัติและข้อมูลผู้ใช้
@@ -35,7 +63,7 @@ function App() {
       setChatHistory(prev => [newHistoryItem, ...prev]);
     }
     // ล้างหน้าจอ พร้อมทักทายด้วยชื่อที่ตั้งไว้
-    setMessages([{ id: Date.now(), text: `สวัสดีค่ะคุณ ${userName}! มีอะไรให้ช่วยไหม?`, sender: "bot" }]);
+    setMessages([{ id: Date.now(), text: `สวัสดีครับคุณ ${userName}! มีอะไรให้ช่วยไหม?`, sender: "bot" }]);
   };
 
   // --- ฟังก์ชัน 2: ลบประวัติเฉพาะอัน ---
@@ -76,7 +104,7 @@ function App() {
       const botMessage = { id: Date.now() + 1, text: data.text, sender: "bot" };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้", sender: "bot" }]);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "เชื่อมต่อ Server ไม่ได้ครับ", sender: "bot" }]);
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +139,10 @@ function App() {
               <div className="avatar" style={{ backgroundColor: msg.sender === 'user' ? '#7b2cbf' : '#19c37d' }}>
                 {msg.sender === 'user' ? userName[0].toUpperCase() : 'AI'}
               </div>
-              <div className="message-text">{msg.text}</div>
+              <div className="message-text">
+                {/* 👇 ใช้ฟังก์ชัน formatMessage แปลงข้อความให้เป็นลิงก์ */}
+                {formatMessage(msg.text)}
+              </div>
             </div>
           ))}
           {isLoading && (
@@ -126,7 +157,7 @@ function App() {
           <div className="input-wrapper">
             <input 
               type="text" 
-              placeholder="ถามมาได้เลย..." 
+              placeholder="ถามมาได้เลยครับ..." 
               value={input} 
               onChange={(e) => setInput(e.target.value)} 
               onKeyDown={(e) => e.key === 'Enter' && handleSend()} 
