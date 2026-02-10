@@ -28,34 +28,26 @@ function App() {
   };
 
   // --- 2. State Management ---
-  // Chat Data
   const [messages, setMessages] = useState([defaultWelcomeMessage]);
   const [currentChatId, setCurrentChatId] = useState(Date.now());
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState(() => JSON.parse(localStorage.getItem('upchat_history')) || []);
 
-  // UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [activeMessageId, setActiveMessageId] = useState(null); // สำหรับมือถือ (Tap to show menu)
+  const [activeMessageId, setActiveMessageId] = useState(null); // สำหรับมือถือ (Tap เพื่อโชว์ปุ่ม)
 
-  // User Data
   const [userName, setUserName] = useState(() => localStorage.getItem('upchat_username') || "User");
   const [profileImage, setProfileImage] = useState(() => localStorage.getItem('upchat_profile_image') || null);
 
-  // Refs
   const chatEndRef = useRef(null);
   const closeMenuTimer = useRef(null);
-  const abortControllerRef = useRef(null); // ไว้เบรคบอทตอนกด Edit
+  const abortControllerRef = useRef(null);
 
   // --- 3. Effects ---
-  // Auto-scroll to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isLoading]);
 
-  // Auto-save history
   useEffect(() => {
     if (messages.length <= 1) return;
     setChatHistory(prev => {
@@ -72,11 +64,10 @@ function App() {
     });
   }, [messages, currentChatId]);
 
-  // Persist Data to LocalStorage
   useEffect(() => { localStorage.setItem('upchat_history', JSON.stringify(chatHistory)); }, [chatHistory]);
   useEffect(() => { if (profileImage) localStorage.setItem('upchat_profile_image', profileImage); }, [profileImage]);
 
-  // --- 4. Handlers: Settings & UI ---
+  // --- 4. Handlers ---
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -86,14 +77,12 @@ function App() {
     }
   };
 
-  // ปิด Sidebar และ Settings พร้อมกัน (แก้ปัญหาค้าง)
   const handleCloseOverlay = (e) => {
     e.stopPropagation();
     setIsSidebarOpen(false);
     setShowSettings(false);
   };
 
-  // --- 5. Handlers: Chat Logic ---
   const handleNewChat = () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     setIsLoading(false);
@@ -127,17 +116,13 @@ function App() {
     setIsSidebarOpen(false);
   };
 
-  // --- 6. Handlers: Message Actions (Edit) ---
   const handleEditMessage = (e, id, text) => {
     e.stopPropagation();
-    // 🛑 เบรคบอททันที
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setIsLoading(false);
-    
-    // ดึงข้อความคืนและลบอันเก่า
     setInput(text);
     setActiveMessageId(null);
     setMessages(prev => {
@@ -145,7 +130,6 @@ function App() {
       if (index !== -1) {
         const newMsgs = [...prev];
         const nextMsg = newMsgs[index + 1];
-        // ลบเป็นคู่ (User + Bot) ถ้ามี
         newMsgs.splice(index, (nextMsg && nextMsg.sender === 'bot') ? 2 : 1);
         return newMsgs;
       }
@@ -154,18 +138,14 @@ function App() {
     document.querySelector('.input-wrapper input')?.focus();
   };
 
-  // ❌ ลบ handleCopyMessage ออกไปแล้ว (เพราะไม่ได้ใช้)
-
   const handleMessageClick = (id) => {
-    // 🛡️ กันนิ้วทะลุ: ถ้า Sidebar เปิดอยู่ ห้ามกดข้อความ
+    // 🛡️ Logic สำหรับมือถือ: แตะเพื่อโชว์/ซ่อน ปุ่ม Edit
     if (isSidebarOpen) return;
     setActiveMessageId(prev => prev === id ? null : id);
   };
 
   const handleSend = async () => {
     if (input.trim() === "") return;
-    
-    // Reset Controller
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -197,17 +177,12 @@ function App() {
     }
   };
 
-  // --- 7. Render ---
   return (
     <div className="app-container" onClick={() => setActiveMessageId(null)}>
-      
-      {/* Overlay: ปิดทั้ง Sidebar และ Settings */}
       <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={handleCloseOverlay} />
 
-      {/* Sidebar */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button className="new-chat-btn" onClick={handleNewChat}><span>+</span> New chat</button>
-        
         <div className="history-label">History</div>
         <div className="history-list">
           {chatHistory.map((item) => (
@@ -217,8 +192,6 @@ function App() {
             </div>
           ))}
         </div>
-
-        {/* Footer & Settings Menu */}
         <div className="sidebar-footer"
              onMouseEnter={() => window.innerWidth > 768 && setShowSettings(true)}
              onMouseLeave={() => { if(window.innerWidth > 768) closeMenuTimer.current = setTimeout(() => setShowSettings(false), 300); }}
@@ -234,12 +207,10 @@ function App() {
             <div className="menu-divider"></div>
             <button className="menu-item danger" onClick={clearAllHistory}>🗑️ Clear History</button>
           </div>
-          
           <button className={`settings-btn ${showSettings ? 'active' : ''}`} onClick={() => setShowSettings(!showSettings)}>⚙️ Settings</button>
         </div>
       </div>
 
-      {/* Chat Window */}
       <div className="chat-window">
         <div className="chat-header" onClick={(e) => e.stopPropagation()}>
           <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>
@@ -250,6 +221,7 @@ function App() {
           {messages.map((msg) => (
             <div 
               key={msg.id} 
+              /* 🔥 เพิ่ม logic: ถ้าเป็นมือถือและถูก active อยู่ ให้แสดง class active */
               className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"} ${activeMessageId === msg.id ? 'active' : ''}`}
               onClick={(e) => { e.stopPropagation(); handleMessageClick(msg.id); }}
             >
@@ -261,12 +233,16 @@ function App() {
               
               <div className="message-text">
                 {formatMessage(msg.text)}
-                {/* 🔥 ส่วนที่แก้ไข: เหลือแค่ปุ่ม Edit อย่างเดียว (และโชว์เฉพาะข้อความ User เท่านั้น)
-                   ❌ ปุ่ม Copy เอาออกไปแล้ว
-                */}
+                
+                {/* 🔥 ปุ่ม Edit แบบ SVG Icon */}
                 {msg.sender === 'user' && (
                   <div className="message-actions">
-                    <button className="action-btn" onClick={(e) => handleEditMessage(e, msg.id, msg.text)} title="แก้ไข">✏️</button>
+                    <button className="icon-btn" onClick={(e) => handleEditMessage(e, msg.id, msg.text)} title="แก้ไขข้อความ">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
                   </div>
                 )}
               </div>
