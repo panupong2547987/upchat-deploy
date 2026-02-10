@@ -127,7 +127,7 @@ function App() {
     setIsSidebarOpen(false);
   };
 
-  // --- 6. Handlers: Message Actions (Edit/Copy) ---
+  // --- 6. Handlers: Message Actions (Edit) ---
   const handleEditMessage = (e, id, text) => {
     e.stopPropagation();
     // 🛑 เบรคบอททันที
@@ -154,12 +154,7 @@ function App() {
     document.querySelector('.input-wrapper input')?.focus();
   };
 
-  const handleCopyMessage = (e, text) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setActiveMessageId(null);
-    alert("คัดลอกเรียบร้อย! ✅");
-  };
+  // ❌ ลบ handleCopyMessage ออกไปแล้ว (เพราะไม่ได้ใช้)
 
   const handleMessageClick = (id) => {
     // 🛡️ กันนิ้วทะลุ: ถ้า Sidebar เปิดอยู่ ห้ามกดข้อความ
@@ -266,12 +261,14 @@ function App() {
               
               <div className="message-text">
                 {formatMessage(msg.text)}
-                <div className="message-actions">
-                  <button className="action-btn" onClick={(e) => handleCopyMessage(e, msg.text)} title="คัดลอก">📋</button>
-                  {msg.sender === 'user' && (
+                {/* 🔥 ส่วนที่แก้ไข: เหลือแค่ปุ่ม Edit อย่างเดียว (และโชว์เฉพาะข้อความ User เท่านั้น)
+                   ❌ ปุ่ม Copy เอาออกไปแล้ว
+                */}
+                {msg.sender === 'user' && (
+                  <div className="message-actions">
                     <button className="action-btn" onClick={(e) => handleEditMessage(e, msg.id, msg.text)} title="แก้ไข">✏️</button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
