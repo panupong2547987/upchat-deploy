@@ -99,19 +99,46 @@ body {
 .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; overflow: hidden; }
 .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Actions */
-.message-actions {
-  position: absolute; bottom: -40px; right: 0;
-  display: flex; gap: 5px; opacity: 0; pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s;
-  background-color: #202123; border: 1px solid #565869;
-  padding: 6px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  z-index: 100; transform: translateY(-5px);
+/* 🔥 --- ปุ่ม Edit แบบใหม่ (Inline & Transparent) --- */
+.icon-btn-inline {
+  background: transparent;  /* พื้นหลังใส */
+  border: none;             /* ไม่มีขอบ */
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* สีไอคอน: ขาวจางๆ */
+  color: rgba(255, 255, 255, 0.5); 
+  
+  /* เริ่มต้นให้ซ่อนไว้ (Opacity 0) */
+  opacity: 0;
+  width: 0; /* บีบความกว้างเป็น 0 เพื่อไม่ให้กินที่ตอนซ่อน */
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
 }
-.bot-msg .message-actions { right: auto; left: 0; }
-.message-bubble:hover .message-actions, .message-bubble.active .message-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
-.action-btn { background: transparent; border: none; cursor: pointer; color: #ececf1; padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-.action-btn:hover { background-color: #40414f; }
+
+/* 💻 PC: เอาเมาส์ชี้กล่องข้อความ -> ไอคอนค่อยโผล่ */
+.message-bubble:hover .icon-btn-inline {
+  opacity: 1;
+  width: 24px; /* ขยายความกว้างออกมา */
+  margin-right: 4px; /* เว้นระยะห่างนิดนึง */
+}
+
+/* 📱 Mobile: เอานิ้วแตะ (Active) -> ไอคอนค่อยโผล่ */
+.message-bubble.active .icon-btn-inline {
+  opacity: 1;
+  width: 24px;
+  margin-right: 4px;
+}
+
+/* Effect ตอนเอาเมาส์ไปชี้ที่ตัวไอคอนดินสอ */
+.icon-btn-inline:hover {
+  color: #ffffff; /* เปลี่ยนเป็นสีขาวชัดๆ */
+  transform: scale(1.1); /* ขยายใหญ่ขึ้นนิดนึง */
+}
 
 /* --- 6. Input Area --- */
 .chat-input-area { padding: 20px 15% 40px 15%; background: linear-gradient(180deg, rgba(52,53,65,0) 0%, #343541 20%); }

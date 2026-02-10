@@ -36,7 +36,7 @@ function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [activeMessageId, setActiveMessageId] = useState(null); // สำหรับมือถือ (Tap เพื่อโชว์ปุ่ม)
+  const [activeMessageId, setActiveMessageId] = useState(null);
 
   const [userName, setUserName] = useState(() => localStorage.getItem('upchat_username') || "User");
   const [profileImage, setProfileImage] = useState(() => localStorage.getItem('upchat_profile_image') || null);
@@ -139,7 +139,6 @@ function App() {
   };
 
   const handleMessageClick = (id) => {
-    // 🛡️ Logic สำหรับมือถือ: แตะเพื่อโชว์/ซ่อน ปุ่ม Edit
     if (isSidebarOpen) return;
     setActiveMessageId(prev => prev === id ? null : id);
   };
@@ -221,7 +220,6 @@ function App() {
           {messages.map((msg) => (
             <div 
               key={msg.id} 
-              /* 🔥 เพิ่ม logic: ถ้าเป็นมือถือและถูก active อยู่ ให้แสดง class active */
               className={`message-bubble ${msg.sender === "user" ? "user-msg" : "bot-msg"} ${activeMessageId === msg.id ? 'active' : ''}`}
               onClick={(e) => { e.stopPropagation(); handleMessageClick(msg.id); }}
             >
@@ -231,20 +229,23 @@ function App() {
                   (msg.sender === 'user' ? userName[0].toUpperCase() : 'AI')}
               </div>
               
-              <div className="message-text">
-                {formatMessage(msg.text)}
+              {/* 🔥 จัด Layout ใหม่: ให้ปุ่มกับข้อความอยู่บรรทัดเดียวกัน */}
+              <div className="message-content-wrapper" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                 
-                {/* 🔥 ปุ่ม Edit แบบ SVG Icon */}
+                {/* 🔥 ย้ายปุ่ม Edit มาไว้ "ด้านหน้า" (ซ้ายมือของข้อความ) */}
                 {msg.sender === 'user' && (
-                  <div className="message-actions">
-                    <button className="icon-btn" onClick={(e) => handleEditMessage(e, msg.id, msg.text)} title="แก้ไขข้อความ">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                  </div>
+                  <button className="icon-btn-inline" onClick={(e) => handleEditMessage(e, msg.id, msg.text)} title="แก้ไข">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
                 )}
+
+                <div className="message-text">
+                  {formatMessage(msg.text)}
+                </div>
+
               </div>
             </div>
           ))}
